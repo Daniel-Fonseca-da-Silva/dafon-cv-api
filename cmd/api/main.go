@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/database"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/routes"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -33,6 +35,16 @@ func main() {
 
 	// Create router
 	router := gin.Default()
+
+	// Configure CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Setup routes
 	routes.SetupRoutes(router, database.GetDB(), logger)
