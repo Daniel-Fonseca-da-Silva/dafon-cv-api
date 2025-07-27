@@ -20,4 +20,8 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 
 	// Setup user routes
 	SetupUserRoutes(router, db, logger)
+
+	// Setup curriculum routes
+	SetupCurriculumRoutes(router, db, logger)
+
 }
