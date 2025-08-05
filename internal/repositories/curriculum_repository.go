@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // CurriculumRepository defines the interface for curriculum data operations
 type CurriculumRepository interface {
 	Create(ctx context.Context, curriculum *models.Curriculums) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error)
 }
 
 // curriculumRepository implements CurriculumRepository interface
@@ -28,4 +30,11 @@ func (cu *curriculumRepository) Create(ctx context.Context, curriculum *models.C
 	return cu.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return tx.Create(curriculum).Error
 	})
+}
+
+// GetByID retrieves a curriculum by ID
+func (cu *curriculumRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error) {
+	var curriculum models.Curriculums
+	err := cu.db.WithContext(ctx).Preload("Works").Where("id = ?", id).First(&curriculum).Error
+	return &curriculum, err
 }
