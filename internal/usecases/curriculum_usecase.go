@@ -32,11 +32,11 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, req *dto.Crea
 		FullName:          req.FullName,
 		Email:             req.Email,
 		DriverLicense:     req.DriverLicense,
-		AboutMe:           req.AboutMe,
-		DateDisponibility: req.DateDisponibility,
+		Intro:             req.Intro,
+		DateDisponibility: *req.DateDisponibility,
 		Languages:         req.Languages,
 		LevelEducation:    req.LevelEducation,
-		CompanyInfo:       req.CompanyInfo,
+		JobDescription:    req.JobDescription,
 	}
 
 	// Create works associated with curriculum
@@ -77,11 +77,11 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, req *dto.Crea
 		FullName:          curriculum.FullName,
 		Email:             curriculum.Email,
 		DriverLicense:     curriculum.DriverLicense,
-		AboutMe:           curriculum.AboutMe,
+		Intro:             curriculum.Intro,
 		DateDisponibility: curriculum.DateDisponibility,
 		Languages:         curriculum.Languages,
 		LevelEducation:    curriculum.LevelEducation,
-		CompanyInfo:       curriculum.CompanyInfo,
+		JobDescription:    curriculum.JobDescription,
 		Works:             worksResponse,
 		CreatedAt:         curriculum.CreatedAt,
 		UpdatedAt:         curriculum.UpdatedAt,
