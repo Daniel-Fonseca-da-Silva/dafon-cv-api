@@ -24,5 +24,6 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) 
 	curriculums.Use(middleware.AuthMiddleware(jwtConfig))
 	{
 		curriculums.POST("", curriculumHandler.CreateCurriculum)
+		curriculums.GET("/:id", curriculumHandler.GetCurriculumByID)
 	}
 }
