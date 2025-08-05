@@ -24,4 +24,12 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Setup curriculum routes
 	SetupCurriculumRoutes(router, db, logger)
 
+	// Setup AI analysis routes
+	SetupGenerateIntroAIRoutes(router, logger)
+	// Setup generate courses AI routes
+	SetupGenerateCoursesAIRoutes(router, logger)
+
+	// Setup generate task AI routes
+	SetupGenerateTaskAIRoutes(router, logger)
+
 }
