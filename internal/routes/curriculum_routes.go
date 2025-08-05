@@ -23,6 +23,6 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) 
 	curriculums := router.Group("/api/v1/curriculums")
 	curriculums.Use(middleware.AuthMiddleware(jwtConfig))
 	{
-		curriculums.POST("/", curriculumHandler.CreateCurriculum)
+		curriculums.POST("", curriculumHandler.CreateCurriculum)
 	}
 }
