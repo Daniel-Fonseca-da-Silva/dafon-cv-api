@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
@@ -11,7 +12,7 @@ import (
 
 // CurriculumUsecase defines the interface for curriculum business logic operations
 type CurriculumUseCase interface {
-	CreateCurriculum(ctx context.Context, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
+	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
 }
 
@@ -28,17 +29,28 @@ func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository) Curr
 }
 
 // CreateCurriculum creates a new curriculum in the database
-func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error) {
+func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error) {
 	// Create curriculum model
 	curriculum := &models.Curriculums{
-		FullName:          req.FullName,
-		Email:             req.Email,
-		DriverLicense:     req.DriverLicense,
-		Intro:             req.Intro,
-		DateDisponibility: *req.DateDisponibility,
-		Languages:         req.Languages,
-		LevelEducation:    req.LevelEducation,
-		JobDescription:    req.JobDescription,
+		FullName:       req.FullName,
+		Email:          req.Email,
+		Phone:          req.Phone,
+		DriverLicense:  req.DriverLicense,
+		Intro:          req.Intro,
+		Technologies:   req.Technologies,
+		Languages:      req.Languages,
+		LevelEducation: req.LevelEducation,
+		Courses:        req.Courses,
+		SocialLinks:    req.SocialLinks,
+		JobDescription: req.JobDescription,
+		UserID:         userID,
+	}
+
+	// Handle optional DateDisponibility field
+	if req.DateDisponibility != nil {
+		curriculum.DateDisponibility = *req.DateDisponibility
+	} else {
+		curriculum.DateDisponibility = time.Now() // Default to current time if not provided
 	}
 
 	// Create works associated with curriculum

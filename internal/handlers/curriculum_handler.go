@@ -12,12 +12,14 @@ import (
 // CurriculumHandler handles HTTP requests for curriculum operations
 type CurriculumHandler struct {
 	curriculumUseCase usecases.CurriculumUseCase
+	userUseCase       usecases.UserUseCase
 }
 
 // NewCurriculumHandler creates a new instance of CurriculumHandler
-func NewCurriculumHandler(curriculumUseCase usecases.CurriculumUseCase) *CurriculumHandler {
+func NewCurriculumHandler(curriculumUseCase usecases.CurriculumUseCase, userUseCase usecases.UserUseCase) *CurriculumHandler {
 	return &CurriculumHandler{
 		curriculumUseCase: curriculumUseCase,
+		userUseCase:       userUseCase,
 	}
 }
 
@@ -29,7 +31,25 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 		return
 	}
 
-	curriculum, err := h.curriculumUseCase.CreateCurriculum(c.Request.Context(), &req)
+	userIDStr, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userUUID, err := uuid.Parse(userIDStr.(string))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	// Verify if the authenticated user exists in the database
+	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	curriculum, err := h.curriculumUseCase.CreateCurriculum(c.Request.Context(), userUUID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

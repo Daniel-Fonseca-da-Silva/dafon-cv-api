@@ -25,6 +25,8 @@ type Curriculums struct {
 	CreatedAt         time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt         time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt         gorm.DeletedAt `json:"-" gorm:"index"`
+	UserID            uuid.UUID      `json:"user_id" gorm:"type:char(36);not null;index"`
+	User              User           `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID

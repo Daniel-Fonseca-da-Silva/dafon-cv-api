@@ -16,9 +16,15 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) 
 	// Initialize JWT configuration
 	jwtConfig := config.NewJWTConfig(logger)
 
+	// Initialize curriculum dependencies
 	curriculumRepo := repositories.NewCurriculumRepository(db)
 	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo)
-	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase)
+
+	// Initialize user dependencies for user verification
+	userRepo := repositories.NewUserRepository(db)
+	userUseCase := usecases.NewUserUseCase(userRepo)
+
+	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
 
 	curriculums := router.Group("/api/v1/curriculums")
 	curriculums.Use(middleware.AuthMiddleware(jwtConfig))
