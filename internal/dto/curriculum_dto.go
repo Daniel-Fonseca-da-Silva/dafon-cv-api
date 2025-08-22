@@ -28,11 +28,15 @@ type CurriculumResponse struct {
 	ID                uuid.UUID      `json:"id"`
 	FullName          string         `json:"full_name"`
 	Email             string         `json:"email"`
+	Phone             string         `json:"phone"`
 	DriverLicense     string         `json:"driver_license"`
 	Intro             string         `json:"intro"`
+	Technologies      string         `json:"technologies"`
 	DateDisponibility time.Time      `json:"date_disponibility"`
 	Languages         string         `json:"languages"`
 	LevelEducation    string         `json:"level_education"`
+	Courses           string         `json:"courses"`
+	SocialLinks       string         `json:"social_links"`
 	JobDescription    string         `json:"job_description"`
 	Works             []WorkResponse `json:"works"`
 	CreatedAt         time.Time      `json:"created_at"`
