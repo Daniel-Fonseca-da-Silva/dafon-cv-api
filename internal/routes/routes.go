@@ -32,4 +32,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Setup generate task AI routes
 	SetupGenerateTaskAIRoutes(router, logger)
 
+	// Setup PDF routes
+	SetupPDFSimpleRoutes(router, db, logger)
+
 }
