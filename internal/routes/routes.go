@@ -35,4 +35,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Setup PDF routes
 	SetupPDFSimpleRoutes(router, db, logger)
 
+	// Setup configuration routes
+	SetupConfigurationRoutes(router, db, logger)
+
 }
