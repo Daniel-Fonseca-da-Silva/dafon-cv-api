@@ -18,14 +18,15 @@ func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 
 	// Initialize user dependencies
 	userRepo := repositories.NewUserRepository(db)
-	userUseCase := usecases.NewUserUseCase(userRepo)
+	configurationRepo := repositories.NewConfigurationRepository(db)
+	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
 	userHandler := handlers.NewUserHandler(userUseCase)
 
 	// User routes group (protected with authentication)
 	users := router.Group("/api/v1/users")
 	users.Use(middleware.AuthMiddleware(jwtConfig))
 	{
-		// Removendo POST / - criação de usuários agora é feita via /auth/register
+		// Removing POST / - user creation is now done via /auth/register
 		users.GET("/", userHandler.GetAllUsers)      // Get all users
 		users.GET("/:id", userHandler.GetUserByID)   // Get user by ID
 		users.PATCH("/:id", userHandler.UpdateUser)  // Update user

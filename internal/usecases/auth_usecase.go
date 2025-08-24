@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -23,14 +22,16 @@ type AuthUseCase interface {
 // authUseCase implements AuthUseCase
 type authUseCase struct {
 	userRepo    repositories.UserRepository
+	userUseCase UserUseCase
 	jwtSecret   string
 	jwtDuration time.Duration
 }
 
 // NewAuthUseCase creates a new instance of AuthUseCase
-func NewAuthUseCase(userRepo repositories.UserRepository, jwtSecret string, jwtDuration time.Duration) AuthUseCase {
+func NewAuthUseCase(userRepo repositories.UserRepository, userUseCase UserUseCase, jwtSecret string, jwtDuration time.Duration) AuthUseCase {
 	return &authUseCase{
 		userRepo:    userRepo,
+		userUseCase: userUseCase,
 		jwtSecret:   jwtSecret,
 		jwtDuration: jwtDuration,
 	}
@@ -67,26 +68,15 @@ func (uc *authUseCase) Login(ctx context.Context, req *dto.LoginRequest) (*dto.A
 
 // Register creates a new user and returns a JWT token
 func (uc *authUseCase) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.AuthResponse, error) {
-	// Check if user already exists
-	existingUser, _ := uc.userRepo.GetByEmail(ctx, req.Email)
-	if existingUser != nil {
-		return nil, errors.New("user already exists")
-	}
-
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create user
-	user := &models.User{
+	// Create user using the user usecase (which will also create default configuration)
+	createUserReq := &dto.CreateUserRequest{
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: string(hashedPassword),
+		Password: req.Password,
 	}
 
-	if err := uc.userRepo.Create(ctx, user); err != nil {
+	user, err := uc.userUseCase.CreateUser(ctx, createUserReq)
+	if err != nil {
 		return nil, err
 	}
 
@@ -99,13 +89,7 @@ func (uc *authUseCase) Register(ctx context.Context, req *dto.RegisterRequest) (
 	return &dto.AuthResponse{
 		Token:     token,
 		ExpiresAt: expiresAt,
-		User: dto.UserResponse{
-			ID:        user.ID,
-			Name:      user.Name,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		},
+		User:      *user,
 	}, nil
 }
 

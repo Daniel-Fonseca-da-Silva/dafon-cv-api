@@ -22,13 +22,15 @@ type UserUseCase interface {
 
 // userUseCase implements UserUseCase interface
 type userUseCase struct {
-	userRepo repositories.UserRepository
+	userRepo          repositories.UserRepository
+	configurationRepo repositories.ConfigurationRepository
 }
 
 // NewUserUseCase creates a new instance of UserUseCase
-func NewUserUseCase(userRepo repositories.UserRepository) UserUseCase {
+func NewUserUseCase(userRepo repositories.UserRepository, configurationRepo repositories.ConfigurationRepository) UserUseCase {
 	return &userUseCase{
-		userRepo: userRepo,
+		userRepo:          userRepo,
+		configurationRepo: configurationRepo,
 	}
 }
 
@@ -53,8 +55,20 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.CreateUserReques
 		Password: string(hashedPassword),
 	}
 
-	// Save to database
+	// Save user to database
 	if err := uc.userRepo.Create(ctx, user); err != nil {
+		return nil, err
+	}
+
+	// Create default configuration for the user
+	configuration := &models.Configuration{
+		UserID:        user.ID,
+		Language:      "en-us", // Default language
+		Newsletter:    false,   // Default: newsletter off
+		ReceiveEmails: false,   // Default: receive emails off
+	}
+
+	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
 		return nil, err
 	}
 
