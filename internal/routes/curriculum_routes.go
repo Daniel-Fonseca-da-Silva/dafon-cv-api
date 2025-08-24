@@ -22,7 +22,8 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) 
 
 	// Initialize user dependencies for user verification
 	userRepo := repositories.NewUserRepository(db)
-	userUseCase := usecases.NewUserUseCase(userRepo)
+	configurationRepo := repositories.NewConfigurationRepository(db)
+	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
 
 	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
 
