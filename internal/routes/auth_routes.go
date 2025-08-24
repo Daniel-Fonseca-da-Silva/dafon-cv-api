@@ -18,7 +18,9 @@ func SetupAuthRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 
 	// Initialize auth dependencies
 	userRepo := repositories.NewUserRepository(db)
-	authUseCase := usecases.NewAuthUseCase(userRepo, jwtConfig.SecretKey, jwtConfig.Duration)
+	configurationRepo := repositories.NewConfigurationRepository(db)
+	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
+	authUseCase := usecases.NewAuthUseCase(userRepo, userUseCase, jwtConfig.SecretKey, jwtConfig.Duration)
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	// Auth routes group
