@@ -79,8 +79,8 @@ func (pg *SimplePDFUseCaseImpl) GeneratePDF(ctx context.Context, curriculumID uu
 	)
 
 	// Create directories if they don't exist
-	pdfDir := "docs/assets/pdf"
-	textDir := "docs/assets/text"
+	pdfDir := os.Getenv("PDF_DIR")
+	textDir := os.Getenv("TEXT_DIR")
 
 	if err := pg.ensureDirectoryExists(pdfDir); err != nil {
 		pg.logger.Error("Failed to create PDF directory",
