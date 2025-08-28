@@ -10,9 +10,9 @@ type LoginRequest struct {
 
 // RegisterRequest represents the request structure for user registration
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required,min=2,max=255"`
+	Name     string `json:"name" binding:"required,min=10,max=100"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8,max=15"`
 }
 
 // AuthResponse represents the response structure for authentication
