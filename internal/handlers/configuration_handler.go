@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -24,13 +26,13 @@ func (h *ConfigurationHandler) GetConfigurationByUserID(c *gin.Context) {
 	userIDStr := c.Param("user_id")
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	configuration, err := h.configurationUseCase.GetConfigurationByUserID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found for this user"})
+		utils.HandleValidationError(c, errors.New("configuration not found for this user"))
 		return
 	}
 
@@ -42,19 +44,19 @@ func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid configuration ID format"})
+		utils.HandleValidationError(c, errors.New("invalid configuration ID format"))
 		return
 	}
 
 	var req dto.UpdateConfigurationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	configuration, err := h.configurationUseCase.UpdateConfiguration(c.Request.Context(), id, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -66,12 +68,12 @@ func (h *ConfigurationHandler) DeleteConfiguration(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid configuration ID format"})
+		utils.HandleValidationError(c, errors.New("invalid configuration ID format"))
 		return
 	}
 
 	if err := h.configurationUseCase.DeleteConfiguration(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, errors.New("failed to delete configuration"))
 		return
 	}
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,13 +25,13 @@ func NewGenerateIntroAIHandler(generateIntroAIUseCase usecases.GenerateIntroAIUs
 func (h *GenerateIntroAIHandler) FilterContent(c *gin.Context) {
 	var req dto.GenerateIntroAIRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	response, err := h.generateIntroAIUseCase.FilterContent(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 

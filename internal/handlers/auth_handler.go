@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,13 +26,13 @@ func NewAuthHandler(authUseCase usecases.AuthUseCase) *AuthHandler {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	response, err := h.authUseCase.Login(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -41,13 +43,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	response, err := h.authUseCase.Register(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -59,19 +61,19 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get user ID from context (set by AuthMiddleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		utils.HandleValidationError(c, errors.New("user not authenticated"))
 		return
 	}
 
 	userIDStr, ok := userID.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	err := h.authUseCase.Logout(c.Request.Context(), userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 

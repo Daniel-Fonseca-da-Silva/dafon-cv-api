@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -25,13 +27,13 @@ func NewUserHandler(userUseCase usecases.UserUseCase) *UserHandler {
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	user, err := h.userUseCase.CreateUser(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -43,13 +45,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	user, err := h.userUseCase.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.HandleValidationError(c, errors.New("user not found"))
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	users, err := h.userUseCase.GetAllUsers(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -72,19 +74,19 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
 	user, err := h.userUseCase.UpdateUser(c.Request.Context(), id, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -96,12 +98,12 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	if err := h.userUseCase.DeleteUser(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
