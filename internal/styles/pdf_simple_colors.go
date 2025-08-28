@@ -3,7 +3,7 @@ package styles
 import "github.com/johnfercher/maroto/v2/pkg/props"
 
 // GetPrimaryColor returns the primary color for PDF styling
-func GetPrimaryColor() *props.Color {
+func GetPrimaryColorSimplePDF() *props.Color {
 	return &props.Color{
 		Red:   44,
 		Green: 62,
@@ -12,7 +12,7 @@ func GetPrimaryColor() *props.Color {
 }
 
 // GetSecondaryColor returns the secondary color for PDF styling
-func GetSecondaryColor() *props.Color {
+func GetSecondaryColorSimplePDF() *props.Color {
 	return &props.Color{
 		Red:   52,
 		Green: 73,
@@ -21,7 +21,7 @@ func GetSecondaryColor() *props.Color {
 }
 
 // GetTextColor returns the text color for PDF styling
-func GetTextColor() *props.Color {
+func GetTextColorSimplePDF() *props.Color {
 	return &props.Color{
 		Red:   52,
 		Green: 73,
