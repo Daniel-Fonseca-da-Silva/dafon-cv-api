@@ -8,16 +8,16 @@ import (
 
 // CreateUserRequest represents the request structure for creating a user
 type CreateUserRequest struct {
-	Name     string `json:"name" binding:"required,min=2,max=255"`
+	Name     string `json:"name" binding:"required,min=10,max=100"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8,max=15"`
 }
 
 // UpdateUserRequest represents the request structure for updating a user
 type UpdateUserRequest struct {
-	Name     string `json:"name" binding:"omitempty,min=2,max=255"`
+	Name     string `json:"name" binding:"omitempty,min=10,max=100"`
 	Email    string `json:"email" binding:"omitempty,email"`
-	Password string `json:"password" binding:"omitempty,min=6"`
+	Password string `json:"password" binding:"omitempty,min=8,max=15"`
 }
 
 // UserResponse represents the response structure for user data
