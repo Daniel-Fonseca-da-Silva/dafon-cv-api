@@ -12,7 +12,7 @@ type LoginRequest struct {
 type RegisterRequest struct {
 	Name     string `json:"name" binding:"required,min=10,max=100"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8,max=15"`
+	Password string `json:"password" binding:"required,min=8,max=50"`
 }
 
 // AuthResponse represents the response structure for authentication

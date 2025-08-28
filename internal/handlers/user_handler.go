@@ -31,6 +31,11 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Validate strong password
+	if !utils.ValidatePasswordAndReturnError(c, req.Password) {
+		return
+	}
+
 	user, err := h.userUseCase.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		utils.HandleValidationError(c, err)
@@ -81,6 +86,11 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.HandleValidationError(c, err)
+		return
+	}
+
+	// Validate strong password if provided
+	if req.Password != "" && !utils.ValidatePasswordAndReturnError(c, req.Password) {
 		return
 	}
 

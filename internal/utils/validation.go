@@ -3,6 +3,7 @@ package utils
 import (
 	"net/http"
 	"strings"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -47,6 +48,59 @@ func ValidatePhoneNumber(phone string) bool {
 	}
 
 	return false
+}
+
+// ValidateStrongPassword validates if a password meets strong password requirements
+// Requirements:
+// - At least 8 characters long
+// - At least one uppercase letter
+// - At least one lowercase letter
+// - At least one digit
+// - At least one special character
+func ValidateStrongPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasDigit   bool
+		hasSpecial bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsDigit(char):
+			hasDigit = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+
+	return hasUpper && hasLower && hasDigit && hasSpecial
+}
+
+// ValidatePasswordAndReturnError validates a password and returns a formatted error response if invalid
+func ValidatePasswordAndReturnError(c *gin.Context, password string) bool {
+	if !ValidateStrongPassword(password) {
+		errorResponse := ValidationErrorResponse{
+			Message: "Invalid input data",
+			Errors: []ValidationError{
+				{
+					Field:   "password",
+					Message: "Password must be at least 8 characters long and contain uppercase, lowercase, digit, and special character",
+				},
+			},
+		}
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return false
+	}
+	return true
 }
 
 // RegisterCustomValidators registers custom validation functions

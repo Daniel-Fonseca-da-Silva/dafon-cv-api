@@ -47,6 +47,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Validate strong password
+	if !utils.ValidatePasswordAndReturnError(c, req.Password) {
+		return
+	}
+
 	response, err := h.authUseCase.Register(c.Request.Context(), &req)
 	if err != nil {
 		utils.HandleValidationError(c, err)
