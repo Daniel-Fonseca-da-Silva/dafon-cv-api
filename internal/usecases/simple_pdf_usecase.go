@@ -180,35 +180,35 @@ func (pg *SimplePDFUseCaseImpl) createMaroto(curriculum dto.CurriculumResponse) 
 // getPersonalDataSection returns the personal data section
 func (pg *SimplePDFUseCaseImpl) getPersonalDataSection(curriculum dto.CurriculumResponse) []core.Row {
 	return []core.Row{
-		// Nome completo
+		// Full name
 		row.New(15).Add(
 			text.NewCol(12, curriculum.FullName, props.Text{
 				Top:   6,
 				Size:  28,
 				Style: fontstyle.Bold,
 				Align: align.Center,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
-		// Cargo profissional
+		// Professional job
 		row.New(10).Add(
 			text.NewCol(12, curriculum.JobDescription, props.Text{
 				Top:   2,
 				Size:  16,
 				Style: fontstyle.Normal,
 				Align: align.Center,
-				Color: styles.GetSecondaryColor(),
+				Color: styles.GetSecondaryColorSimplePDF(),
 			}),
 		),
 
-		// Informações de contato
+		// Contact information
 		row.New(8).Add(
 			text.NewCol(12, curriculum.Email+" • "+curriculum.Phone, props.Text{
-				Top:   2,
+				Top:   4,
 				Size:  11,
 				Align: align.Center,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 			}),
 		),
 
@@ -225,7 +225,7 @@ func (pg *SimplePDFUseCaseImpl) getIntroSection(curriculum dto.CurriculumRespons
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -233,7 +233,7 @@ func (pg *SimplePDFUseCaseImpl) getIntroSection(curriculum dto.CurriculumRespons
 			text.NewCol(12, curriculum.Intro, props.Text{
 				Size:  11,
 				Align: align.Justify,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -252,7 +252,7 @@ func (pg *SimplePDFUseCaseImpl) getExperienceSection(works []dto.WorkResponse) [
 			Size:  16,
 			Style: fontstyle.Bold,
 			Align: align.Left,
-			Color: styles.GetPrimaryColor(),
+			Color: styles.GetPrimaryColorSimplePDF(),
 		}),
 	))
 
@@ -268,14 +268,14 @@ func (pg *SimplePDFUseCaseImpl) getExperienceSection(works []dto.WorkResponse) [
 				Size:  13,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetSecondaryColor(),
+				Color: styles.GetSecondaryColorSimplePDF(),
 				Top:   2,
 			}),
 			text.NewCol(4, work.StartDate.Format("2006-01")+" - "+endDateStr, props.Text{
 				Size:  10,
 				Style: fontstyle.Italic,
 				Align: align.Right,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		))
@@ -286,7 +286,7 @@ func (pg *SimplePDFUseCaseImpl) getExperienceSection(works []dto.WorkResponse) [
 				Size:  12,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 				Top:   1,
 			}),
 		))
@@ -296,7 +296,7 @@ func (pg *SimplePDFUseCaseImpl) getExperienceSection(works []dto.WorkResponse) [
 			text.NewCol(12, work.CompanyDescription, props.Text{
 				Size:  10,
 				Align: align.Justify,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		))
@@ -319,7 +319,7 @@ func (pg *SimplePDFUseCaseImpl) getEducationSection(curriculum dto.CurriculumRes
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -327,7 +327,7 @@ func (pg *SimplePDFUseCaseImpl) getEducationSection(curriculum dto.CurriculumRes
 			text.NewCol(12, curriculum.LevelEducation, props.Text{
 				Size:  12,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -345,7 +345,7 @@ func (pg *SimplePDFUseCaseImpl) getCoursesSection(curriculum dto.CurriculumRespo
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -353,7 +353,7 @@ func (pg *SimplePDFUseCaseImpl) getCoursesSection(curriculum dto.CurriculumRespo
 			text.NewCol(12, curriculum.Courses, props.Text{
 				Size:  11,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -371,7 +371,7 @@ func (pg *SimplePDFUseCaseImpl) getTechnologiesSection(curriculum dto.Curriculum
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -379,7 +379,7 @@ func (pg *SimplePDFUseCaseImpl) getTechnologiesSection(curriculum dto.Curriculum
 			text.NewCol(12, curriculum.Technologies, props.Text{
 				Size:  11,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -397,7 +397,7 @@ func (pg *SimplePDFUseCaseImpl) getLanguagesSection(curriculum dto.CurriculumRes
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -405,7 +405,7 @@ func (pg *SimplePDFUseCaseImpl) getLanguagesSection(curriculum dto.CurriculumRes
 			text.NewCol(12, curriculum.Languages, props.Text{
 				Size:  11,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -423,7 +423,7 @@ func (pg *SimplePDFUseCaseImpl) getDriveLicenseSection(curriculum dto.Curriculum
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -431,7 +431,7 @@ func (pg *SimplePDFUseCaseImpl) getDriveLicenseSection(curriculum dto.Curriculum
 			text.NewCol(12, curriculum.DriverLicense, props.Text{
 				Size:  11,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
@@ -449,7 +449,7 @@ func (pg *SimplePDFUseCaseImpl) getSocialLinksSection(curriculum dto.CurriculumR
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Left,
-				Color: styles.GetPrimaryColor(),
+				Color: styles.GetPrimaryColorSimplePDF(),
 			}),
 		),
 
@@ -457,7 +457,7 @@ func (pg *SimplePDFUseCaseImpl) getSocialLinksSection(curriculum dto.CurriculumR
 			text.NewCol(12, curriculum.SocialLinks, props.Text{
 				Size:  11,
 				Align: align.Left,
-				Color: styles.GetTextColor(),
+				Color: styles.GetTextColorSimplePDF(),
 				Top:   2,
 			}),
 		),
