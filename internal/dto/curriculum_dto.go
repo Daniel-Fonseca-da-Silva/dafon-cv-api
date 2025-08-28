@@ -18,7 +18,7 @@ type CreateCurriculumRequest struct {
 	Languages         string              `json:"languages" binding:"required"`
 	LevelEducation    string              `json:"level_education" binding:"required,min=5"`
 	Courses           string              `json:"courses"`
-	SocialLinks       string              `json:"social_links"`
+	SocialLinks       string              `json:"social_links" binding:"url"`
 	JobDescription    string              `json:"job_description"`
 	Works             []CreateWorkRequest `json:"works"`
 }
@@ -36,7 +36,7 @@ type CurriculumResponse struct {
 	Languages         string         `json:"languages"`
 	LevelEducation    string         `json:"level_education"`
 	Courses           string         `json:"courses"`
-	SocialLinks       string         `json:"social_links"`
+	SocialLinks       string         `json:"social_links" binding:"url"`
 	JobDescription    string         `json:"job_description"`
 	Works             []WorkResponse `json:"works"`
 	CreatedAt         time.Time      `json:"created_at"`
