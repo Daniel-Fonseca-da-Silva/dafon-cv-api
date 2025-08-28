@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -27,31 +29,45 @@ func NewCurriculumHandler(curriculumUseCase usecases.CurriculumUseCase, userUseC
 func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 	var req dto.CreateCurriculumRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	// Validate phone number using our custom validation
+	if !utils.ValidatePhoneNumber(req.Phone) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid input data",
+			"errors": []utils.ValidationError{
+				{
+					Field:   "phone",
+					Message: "Invalid phone number",
+				},
+			},
+		})
 		return
 	}
 
 	userIDStr, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		utils.HandleValidationError(c, errors.New("user not authenticated"))
 		return
 	}
 	userUUID, err := uuid.Parse(userIDStr.(string))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		utils.HandleValidationError(c, errors.New("invalid user ID in context"))
 		return
 	}
 
 	// Verify if the authenticated user exists in the database
 	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userUUID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.HandleValidationError(c, errors.New("user not found"))
 		return
 	}
 
 	curriculum, err := h.curriculumUseCase.CreateCurriculum(c.Request.Context(), userUUID, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleValidationError(c, err)
 		return
 	}
 
@@ -63,13 +79,14 @@ func (h *CurriculumHandler) GetCurriculumByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid curriculum ID format"})
+		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
 		return
 	}
 
 	curriculum, err := h.curriculumUseCase.GetCurriculumByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Curriculum not found"})
+		utils.HandleValidationError(c, errors.New("curriculum not found"))
+		return
 	}
 
 	c.JSON(http.StatusOK, curriculum)
