@@ -51,7 +51,9 @@ func main() {
 	}))
 
 	// Setup routes
-	routes.SetupRoutes(router, database.GetDB(), logger)
+	if err := routes.SetupRoutes(router, database.GetDB(), logger, cfg); err != nil {
+		logger.Fatal("Failed to setup routes", zap.Error(err))
+	}
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)

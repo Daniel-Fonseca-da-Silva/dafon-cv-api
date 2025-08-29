@@ -14,6 +14,8 @@ type Config struct {
 	Mode       string
 	DB         DatabaseConfig
 	WorkerPool WorkerPoolConfig
+	Email      EmailConfig
+	App        AppConfig
 }
 
 // DatabaseConfig holds database configuration
@@ -32,6 +34,20 @@ type WorkerPoolConfig struct {
 	QueueSize  int
 }
 
+// EmailConfig holds email configuration
+type EmailConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	From     string
+}
+
+// AppConfig holds application configuration
+type AppConfig struct {
+	URL string
+}
+
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *Config {
 	// Load .env file if it exists
@@ -40,18 +56,26 @@ func LoadConfig() *Config {
 	}
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	mode := os.Getenv("GIN_MODE")
-	if mode == "" {
-		mode = "debug"
-	}
 
 	// Worker pool configuration
 	numWorkers := getEnvAsInt("WORKER_POOL_SIZE", "5")
 	queueSize := getEnvAsInt("WORKER_QUEUE_SIZE", "100")
+
+	// Email configuration
+	emailHost := os.Getenv("MAIL_HOST")
+
+	emailPort := os.Getenv("MAIL_PORT")
+
+	emailUsername := os.Getenv("MAIL_USERNAME")
+
+	emailPassword := os.Getenv("MAIL_PASSWORD")
+
+	emailFrom := os.Getenv("MAIL_FROM")
+
+	// App configuration
+	appURL := os.Getenv("APP_URL")
 
 	return &Config{
 		Port: port,
@@ -67,6 +91,16 @@ func LoadConfig() *Config {
 		WorkerPool: WorkerPoolConfig{
 			NumWorkers: numWorkers,
 			QueueSize:  queueSize,
+		},
+		Email: EmailConfig{
+			Host:     emailHost,
+			Port:     emailPort,
+			Username: emailUsername,
+			Password: emailPassword,
+			From:     emailFrom,
+		},
+		App: AppConfig{
+			URL: appURL,
 		},
 	}
 }
