@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
 )
 
@@ -23,7 +24,7 @@ type generateIntroAIUseCase struct {
 func NewGenerateIntroAIUseCase() (GenerateIntroAIUseCase, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY environment variable is required")
+		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
 	client := openai.NewClient()
@@ -54,7 +55,7 @@ Your task is to generate a resume-ready description (max. 320 characters) based 
 
 BEFORE WRITING:
 - Analyze the input for clarity, coherence, and completeness.
-- Validate if the information is sufficient to create a meaningful description. If it's too vague or lacks accomplishments, highlight what’s missing (but don’t generate the description).
+- Validate if the information is sufficient to create a meaningful description. If it's too vague or lacks accomplishments, highlight what's missing (but don't generate the description).
 - If multiple roles/skills are listed, prioritize the most impactful or recent ones.
 
 WHEN WRITING:
@@ -94,11 +95,11 @@ If the information is insufficient or unclear:
 	// Call OpenAI API
 	resp, err := uc.openaiClient.Chat.Completions.New(ctx, chatReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get OpenAI response: %w", err)
+		return nil, errors.WrapError(err, "failed to get OpenAI response")
 	}
 
 	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("no response from OpenAI")
+		return nil, errors.NewAppError("no response from OpenAI")
 	}
 
 	// Get the filtered content

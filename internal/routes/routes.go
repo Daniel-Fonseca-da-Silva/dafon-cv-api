@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -8,7 +10,7 @@ import (
 )
 
 // SetupRoutes configures all application routes
-func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
+func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) error {
 	// Health check handler
 	healthHandler := handlers.NewHealthCheckHandler()
 
@@ -16,7 +18,9 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	router.GET("/health", healthHandler.HealthCheck)
 
 	// Setup auth routes
-	SetupAuthRoutes(router, db, logger)
+	if err := SetupAuthRoutes(router, db, logger, cfg); err != nil {
+		return errors.WrapError(err, "failed to setup auth routes")
+	}
 
 	// Setup user routes
 	SetupUserRoutes(router, db, logger)
@@ -41,4 +45,5 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Setup configuration routes
 	SetupConfigurationRoutes(router, db, logger)
 
+	return nil
 }

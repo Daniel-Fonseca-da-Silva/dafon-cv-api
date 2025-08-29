@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
 )
 
@@ -23,7 +24,7 @@ type generateCoursesAIUseCase struct {
 func NewGenerateCoursesAIUseCase() (GenerateCoursesAIUseCase, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY environment variable is required")
+		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
 	client := openai.NewClient()
@@ -74,7 +75,7 @@ Friendly and human (still professional)
 
 Generate a unique list (min 10 items and max 20 items) of relevant and realistic courses or certifications that:
 
-Are tailored to the user’s main course/area
+Are tailored to the user's main course/area
 
 Use professional, recruiter-friendly vocabulary
 
@@ -98,7 +99,7 @@ Always match the language of the input.
 ADDITIONAL INSTRUCTIONS:
 Every new request must result in a new and varied list. Do not repeat formulas or templates.
 
-If the input is unclear or insufficient, ask briefly for more detail (e.g., “your can specify better the course or field of study?”).`),
+If the input is unclear or insufficient, ask briefly for more detail (e.g., "your can specify better the course or field of study?").`),
 			openai.UserMessage(prompt),
 		},
 		MaxTokens:   openai.Int(1000),
@@ -108,11 +109,11 @@ If the input is unclear or insufficient, ask briefly for more detail (e.g., “y
 	// Call OpenAI API
 	resp, err := uc.openaiClient.Chat.Completions.New(ctx, chatReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get OpenAI response: %w", err)
+		return nil, errors.WrapError(err, "failed to get OpenAI response")
 	}
 
 	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("no response from OpenAI")
+		return nil, errors.NewAppError("no response from OpenAI")
 	}
 
 	// Get the filtered content

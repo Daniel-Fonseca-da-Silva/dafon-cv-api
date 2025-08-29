@@ -2,9 +2,9 @@ package usecases
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/google/uuid"
@@ -39,7 +39,7 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.CreateUserReques
 	// Check if user already exists with the same email
 	existingUser, err := uc.userRepo.GetByEmail(ctx, req.Email)
 	if err == nil && existingUser != nil {
-		return nil, errors.New("user with this email already exists")
+		return nil, errors.ErrUserAlreadyExists
 	}
 
 	// Hash the password
@@ -139,7 +139,7 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 		if req.Email != user.Email {
 			existingUser, err := uc.userRepo.GetByEmail(ctx, req.Email)
 			if err == nil && existingUser != nil {
-				return nil, errors.New("email already taken by another user")
+				return nil, errors.ErrUserAlreadyExists
 			}
 		}
 		user.Email = req.Email

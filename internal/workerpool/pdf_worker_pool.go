@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -174,7 +175,7 @@ func (wp *PDFWorkerPool) Submit(curriculumID uuid.UUID, userIP string) (chan err
 	wp.mu.RLock()
 	if !wp.isRunning || wp.isStopping {
 		wp.mu.RUnlock()
-		return nil, ErrPoolStopped
+		return nil, errors.ErrPoolStopped
 	}
 	wp.mu.RUnlock()
 
@@ -196,10 +197,10 @@ func (wp *PDFWorkerPool) Submit(curriculumID uuid.UUID, userIP string) (chan err
 		return result, nil
 	case <-time.After(30 * time.Second):
 		close(result)
-		return nil, ErrQueueFull
+		return nil, errors.ErrQueueFull
 	case <-wp.quit:
 		close(result)
-		return nil, ErrPoolStopped
+		return nil, errors.ErrPoolStopped
 	}
 }
 
@@ -235,13 +236,13 @@ func (wp *PDFWorkerPool) dispatcher() {
 					wp.logger.Error("Failed to dispatch job to worker",
 						zap.String("curriculum_id", job.CurriculumID.String()),
 					)
-					job.Result <- ErrWorkerUnavailable
+					job.Result <- errors.ErrWorkerUnavailable
 				}
 			case <-time.After(10 * time.Second):
 				wp.logger.Error("No worker available, job rejected",
 					zap.String("curriculum_id", job.CurriculumID.String()),
 				)
-				job.Result <- ErrWorkerUnavailable
+				job.Result <- errors.ErrWorkerUnavailable
 			}
 
 		case <-wp.quit:
