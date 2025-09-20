@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
@@ -19,16 +18,10 @@ func SetupAuthRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *c
 
 	// Initialize auth dependencies
 	userRepo := repositories.NewUserRepository(db)
-	passwordResetRepo := repositories.NewPasswordResetRepository(db)
 	configurationRepo := repositories.NewConfigurationRepository(db)
 	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
 
-	emailUseCase, err := usecases.NewEmailUseCase(logger)
-	if err != nil {
-		return errors.WrapError(err, "failed to initialize email use case")
-	}
-
-	authUseCase := usecases.NewAuthUseCase(userRepo, passwordResetRepo, userUseCase, emailUseCase, jwtConfig.SecretKey, jwtConfig.Duration, cfg.App.URL)
+	authUseCase := usecases.NewAuthUseCase(userRepo, userUseCase, jwtConfig.SecretKey, jwtConfig.Duration)
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	// Auth routes group
@@ -37,8 +30,6 @@ func SetupAuthRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *c
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/logout", middleware.AuthMiddleware(jwtConfig), authHandler.Logout)
-		auth.POST("/forgot-password", authHandler.ForgotPassword)
-		auth.POST("/reset-password", authHandler.ResetPassword)
 	}
 
 	return nil

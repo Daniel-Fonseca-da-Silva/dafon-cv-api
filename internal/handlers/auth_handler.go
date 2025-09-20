@@ -47,11 +47,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate strong password
-	if !utils.ValidatePasswordAndReturnError(c, req.Password) {
-		return
-	}
-
 	response, err := h.authUseCase.Register(c.Request.Context(), &req)
 	if err != nil {
 		utils.HandleValidationError(c, err)
@@ -85,54 +80,5 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	response := dto.LogoutResponse{
 		Message: "Logout successful",
 	}
-	c.JSON(http.StatusOK, response)
-}
-
-// ForgotPassword handles POST /auth/forgot-password request
-func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	var req dto.ForgotPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
-	response, err := h.authUseCase.ForgotPassword(c.Request.Context(), &req)
-	if err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-// ResetPassword handles POST /auth/reset-password?token=<token> request
-func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	// Get token from query parameter
-	token := c.Query("token")
-	if token == "" {
-		utils.HandleValidationError(c, errors.New("token is required"))
-		return
-	}
-
-	var req dto.ResetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
-	// Set token from query parameter
-	req.Token = token
-
-	// Validate strong password
-	if !utils.ValidatePasswordAndReturnError(c, req.Password) {
-		return
-	}
-
-	response, err := h.authUseCase.ResetPassword(c.Request.Context(), &req)
-	if err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
 	c.JSON(http.StatusOK, response)
 }

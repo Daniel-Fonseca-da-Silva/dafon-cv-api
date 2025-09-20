@@ -8,7 +8,6 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // UserUseCase defines the interface for user business logic operations
@@ -42,17 +41,10 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.CreateUserReques
 		return nil, errors.ErrUserAlreadyExists
 	}
 
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create user model
 	user := &models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: string(hashedPassword),
+		Name:  req.Name,
+		Email: req.Email,
 	}
 
 	// Save user to database
@@ -143,13 +135,6 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 			}
 		}
 		user.Email = req.Email
-	}
-	if req.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, err
-		}
-		user.Password = string(hashedPassword)
 	}
 
 	// Save updated user

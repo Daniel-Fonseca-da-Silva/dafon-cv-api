@@ -10,7 +10,6 @@ type User struct {
 	ID            uuid.UUID      `json:"id" gorm:"type:char(36);primary_key;default:(UUID());table:user"`
 	Name          string         `json:"name" gorm:"size:255;not null"`
 	Email         string         `json:"email" gorm:"size:255;unique;not null"`
-	Password      string         `json:"-" gorm:"size:255;not null"` // "-" hides password from JSON
 	Curriculums   []Curriculums  `json:"curriculums,omitempty" gorm:"foreignKey:UserID"`
 	Configuration *Configuration `json:"configuration,omitempty" gorm:"foreignKey:UserID"`
 }
