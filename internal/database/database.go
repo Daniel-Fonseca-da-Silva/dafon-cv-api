@@ -45,7 +45,7 @@ func Connect(cfg *config.Config, log *zap.Logger) error {
 
 // AutoMigrate runs database migrations
 func AutoMigrate(log *zap.Logger) error {
-	if err := DB.AutoMigrate(&models.User{}, &models.Curriculums{}, &models.Work{}, &models.Configuration{}, &models.PasswordReset{}); err != nil {
+	if err := DB.AutoMigrate(&models.User{}, &models.Curriculums{}, &models.Work{}, &models.Configuration{}); err != nil {
 		return errors.WrapError(err, "failed to run migrations")
 	}
 
