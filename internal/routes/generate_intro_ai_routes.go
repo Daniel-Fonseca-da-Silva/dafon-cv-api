@@ -19,7 +19,7 @@ func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger) {
 
 	generateIntroAIUseCase, err := usecases.NewGenerateIntroAIUseCase()
 	if err != nil {
-		logger.Error("Failed to create GenerateIntroAI usecase", zap.Error(err))
+		logger.Error("Failed to create Generate Intro AI usecase", zap.Error(err))
 		return
 	}
 

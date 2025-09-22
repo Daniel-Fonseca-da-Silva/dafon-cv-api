@@ -19,7 +19,7 @@ func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger) {
 
 	generateTaskAIUseCase, err := usecases.NewGenerateTaskAIUseCase()
 	if err != nil {
-		logger.Error("Failed to create GenerateTaskAI usecase", zap.Error(err))
+		logger.Error("Failed to create Generate Task AI usecase", zap.Error(err))
 		return
 	}
 

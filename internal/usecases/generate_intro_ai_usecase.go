@@ -82,7 +82,15 @@ ADDITIONAL INSTRUCTIONS:
 
 IF INPUT IS IN PORTUGUESE:
 - Return the description in Portuguese, following the same structure and tone logic.
-- Use natural, correct Brazilian Portuguese with professional vocabulary.
+- Use natural, correct Portuguese with professional vocabulary.
+
+IF INPUT IS IN ENGLISH:
+- Return the description in English, following the same structure and tone logic.
+- Use natural, correct English with professional vocabulary.
+
+IF INPUT IS IN SPANISH:
+- Return the description in Spanish, following the same structure and tone logic.
+- Use natural, correct Spanish with professional vocabulary.
 
 If the information is insufficient or unclear:
 - Reply with a short message asking for more detail (e.g., specific achievements, role type, or impact).`),

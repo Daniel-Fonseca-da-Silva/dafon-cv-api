@@ -19,7 +19,7 @@ func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger) {
 
 	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase()
 	if err != nil {
-		logger.Error("Failed to create GenerateCoursesAI usecase", zap.Error(err))
+		logger.Error("Failed to create Generate Courses AI usecase", zap.Error(err))
 		return
 	}
 
