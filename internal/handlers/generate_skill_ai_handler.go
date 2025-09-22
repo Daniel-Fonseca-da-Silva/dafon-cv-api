@@ -1,0 +1,39 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
+	"github.com/gin-gonic/gin"
+)
+
+// GenerateSkillAIHandler handles HTTP requests for AI skill generation operations
+type GenerateSkillAIHandler struct {
+	generateSkillAIUseCase usecases.GenerateSkillAIUseCase
+}
+
+// NewGenerateSkillAIHandler creates a new instance of GenerateSkillAIHandler
+func NewGenerateSkillAIHandler(generateSkillAIUseCase usecases.GenerateSkillAIUseCase) *GenerateSkillAIHandler {
+	return &GenerateSkillAIHandler{
+		generateSkillAIUseCase: generateSkillAIUseCase,
+	}
+}
+
+// FilterContent handles POST /generate-skill-ai request to generate related skills
+func (h *GenerateSkillAIHandler) FilterContent(c *gin.Context) {
+	var req dto.GenerateSkillAIRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	response, err := h.generateSkillAIUseCase.FilterContent(c.Request.Context(), &req)
+	if err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
