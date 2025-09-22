@@ -12,7 +12,7 @@ import (
 
 // UserUseCase defines the interface for user business logic operations
 type UserUseCase interface {
-	CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.UserResponse, error)
+	CreateUser(ctx context.Context, req *dto.RegisterRequest) (*dto.UserResponse, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
 	GetAllUsers(ctx context.Context) (*dto.UsersResponse, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, req *dto.UpdateUserRequest) (*dto.UserResponse, error)
@@ -34,7 +34,7 @@ func NewUserUseCase(userRepo repositories.UserRepository, configurationRepo repo
 }
 
 // CreateUser creates a new user with business logic validation
-func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.UserResponse, error) {
+func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest) (*dto.UserResponse, error) {
 	// Check if user already exists with the same email
 	existingUser, err := uc.userRepo.GetByEmail(ctx, req.Email)
 	if err == nil && existingUser != nil {
@@ -55,9 +55,9 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.CreateUserReques
 	// Create default configuration for the user
 	configuration := &models.Configuration{
 		UserID:        user.ID,
-		Language:      "en-us", // Default language
-		Newsletter:    false,   // Default: newsletter off
-		ReceiveEmails: false,   // Default: receive emails off
+		Language:      "en",  // Default language
+		Newsletter:    false, // Default: newsletter off
+		ReceiveEmails: false, // Default: receive emails off
 	}
 
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
