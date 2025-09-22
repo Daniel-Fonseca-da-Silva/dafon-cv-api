@@ -22,7 +22,7 @@ func NewAuthHandler(authUseCase usecases.AuthUseCase) *AuthHandler {
 	}
 }
 
-// Login handles POST /auth/login request
+// Login handles POST /auth/login request with email
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -81,4 +81,39 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		Message: "Logout successful",
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+// LoginWithToken handles GET /auth/login-with-token request with token in query parameter
+func (h *AuthHandler) LoginWithToken(c *gin.Context) {
+	// Get token from query parameter
+	token := c.Query("token")
+	if token == "" {
+		utils.HandleValidationError(c, errors.New("token parameter is required"))
+		return
+	}
+
+	response, err := h.authUseCase.LoginWithToken(c.Request.Context(), token)
+	if err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	// Set JWT as HTTP-only cookie
+	c.SetCookie(
+		"auth_token",    // name
+		*response.Token, // value
+		3600,            // maxAge (1 hour)
+		"/",             // path
+		"",              // domain
+		false,           // secure (set to true in production with HTTPS)
+		true,            // httpOnly
+	)
+
+	// Return JSON response for API testing (Postman) and frontend
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Login successful",
+		"user":       response.User,
+		"token":      response.Token,
+		"expires_at": response.ExpiresAt,
+	})
 }
