@@ -21,6 +21,14 @@ var (
 	ErrTokenExpired       = &AppError{message: "token expired"}
 	ErrInvalidToken       = &AppError{message: "invalid token"}
 
+	// Session related errors
+	ErrSessionNotFound           = &AppError{message: "session not found"}
+	ErrSessionExpired            = &AppError{message: "session expired"}
+	ErrSessionCreationFailed     = &AppError{message: "failed to create session"}
+	ErrSessionDeactivationFailed = &AppError{message: "failed to deactivate session"}
+	ErrSessionCleanupFailed      = &AppError{message: "failed to cleanup sessions"}
+	ErrTokenGenerationFailed     = &AppError{message: "failed to generate token"}
+
 	// Worker pool related errors
 	ErrQueueFull         = &AppError{message: "queue is full"}
 	ErrPoolStopped       = &AppError{message: "worker pool is stopped"}

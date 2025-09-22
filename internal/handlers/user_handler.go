@@ -23,28 +23,6 @@ func NewUserHandler(userUseCase usecases.UserUseCase) *UserHandler {
 	}
 }
 
-// CreateUser handles POST /users request
-func (h *UserHandler) CreateUser(c *gin.Context) {
-	var req dto.CreateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
-	// Validate strong password
-	if !utils.ValidatePasswordAndReturnError(c, req.Password) {
-		return
-	}
-
-	user, err := h.userUseCase.CreateUser(c.Request.Context(), &req)
-	if err != nil {
-		utils.HandleValidationError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, user)
-}
-
 // GetUserByID handles GET /users/:id request
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
@@ -86,11 +64,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.HandleValidationError(c, err)
-		return
-	}
-
-	// Validate strong password if provided
-	if req.Password != "" && !utils.ValidatePasswordAndReturnError(c, req.Password) {
 		return
 	}
 
