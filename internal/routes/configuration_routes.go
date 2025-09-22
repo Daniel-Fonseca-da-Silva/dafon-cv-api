@@ -13,7 +13,10 @@ import (
 
 func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Initialize JWT configuration
-	jwtConfig := config.NewJWTConfig(logger)
+	jwtConfig, err := config.NewJWTConfig(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
+	}
 
 	// Initialize configuration dependencies
 	configurationRepo := repositories.NewConfigurationRepository(db)

@@ -12,7 +12,10 @@ import (
 // SetupGenerateIntroAIRoutes configures AI filtering-related routes
 func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	// Initialize JWT configuration
-	jwtConfig := config.NewJWTConfig(logger)
+	jwtConfig, err := config.NewJWTConfig(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
+	}
 
 	generateIntroAIUseCase, err := usecases.NewGenerateIntroAIUseCase()
 	if err != nil {

@@ -14,7 +14,10 @@ import (
 // SetupUserRoutes configures user-related routes
 func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 	// Initialize JWT configuration
-	jwtConfig := config.NewJWTConfig(logger)
+	jwtConfig, err := config.NewJWTConfig(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
+	}
 
 	// Initialize user dependencies
 	userRepo := repositories.NewUserRepository(db)

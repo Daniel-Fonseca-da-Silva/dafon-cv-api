@@ -12,7 +12,10 @@ import (
 // SetupGenerateCoursesAIRoutes configures AI filtering-related routes
 func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	// Initialize JWT configuration
-	jwtConfig := config.NewJWTConfig(logger)
+	jwtConfig, err := config.NewJWTConfig(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
+	}
 
 	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase()
 	if err != nil {
