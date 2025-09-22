@@ -36,11 +36,8 @@ type WorkerPoolConfig struct {
 
 // EmailConfig holds email configuration
 type EmailConfig struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
-	From     string
+	APIKey string
+	From   string
 }
 
 // AppConfig holds application configuration
@@ -64,14 +61,7 @@ func LoadConfig() *Config {
 	queueSize := getEnvAsInt("WORKER_QUEUE_SIZE", "100")
 
 	// Email configuration
-	emailHost := os.Getenv("MAIL_HOST")
-
-	emailPort := os.Getenv("MAIL_PORT")
-
-	emailUsername := os.Getenv("MAIL_USERNAME")
-
-	emailPassword := os.Getenv("MAIL_PASSWORD")
-
+	emailAPIKey := os.Getenv("RESEND_API_KEY")
 	emailFrom := os.Getenv("MAIL_FROM")
 
 	// App configuration
@@ -93,11 +83,8 @@ func LoadConfig() *Config {
 			QueueSize:  queueSize,
 		},
 		Email: EmailConfig{
-			Host:     emailHost,
-			Port:     emailPort,
-			Username: emailUsername,
-			Password: emailPassword,
-			From:     emailFrom,
+			APIKey: emailAPIKey,
+			From:   emailFrom,
 		},
 		App: AppConfig{
 			URL: appURL,
