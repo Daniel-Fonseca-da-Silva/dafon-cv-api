@@ -5,233 +5,162 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
+	"github.com/resend/resend-go/v2"
 	"go.uber.org/zap"
-	"gopkg.in/gomail.v2"
 )
 
 // EmailUseCase defines the interface for email operations
 type EmailUseCase interface {
-	SendPasswordResetEmail(to, resetLink string) error
+	SendSessionTokenEmail(to, token, baseURL string) error
 }
 
 // emailUseCase implements EmailUseCase interface
 type emailUseCase struct {
-	dialer *gomail.Dialer
+	client *resend.Client
 	from   string
 	logger *zap.Logger
 }
 
 // NewEmailUseCase creates a new instance of EmailUseCase
 func NewEmailUseCase(logger *zap.Logger) (EmailUseCase, error) {
-	host := os.Getenv("MAIL_HOST")
-	portStr := os.Getenv("MAIL_PORT")
-	username := os.Getenv("MAIL_USERNAME")
-	password := os.Getenv("MAIL_PASSWORD")
+	apiKey := os.Getenv("RESEND_API_KEY")
 	from := os.Getenv("MAIL_FROM")
 
 	logger.Debug("Loading email configuration from environment variables",
-		zap.String("host", host),
-		zap.String("port", portStr),
-		zap.String("username", username),
 		zap.String("from", from),
 	)
 
-	if host == "" {
-		logger.Error("MAIL_HOST environment variable is missing")
-		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "MAIL_HOST environment variable is required")
-	}
-	if portStr == "" {
-		logger.Error("MAIL_PORT environment variable is missing")
-		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "MAIL_PORT environment variable is required")
-	}
-	if username == "" {
-		logger.Error("MAIL_USERNAME environment variable is missing")
-		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "MAIL_USERNAME environment variable is required")
-	}
-	if password == "" {
-		logger.Error("MAIL_PASSWORD environment variable is missing")
-		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "MAIL_PASSWORD environment variable is required")
+	if apiKey == "" {
+		logger.Error("RESEND_API_KEY environment variable is missing")
+		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "RESEND_API_KEY environment variable is required")
 	}
 	if from == "" {
 		logger.Error("MAIL_FROM environment variable is missing")
 		return nil, errors.WrapError(errors.ErrEmailConfigMissing, "MAIL_FROM environment variable is required")
 	}
 
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		logger.Error("Failed to parse MAIL_PORT",
-			zap.String("port", portStr),
-			zap.Error(err),
-		)
-		return nil, errors.WrapError(errors.ErrInvalidPort, fmt.Sprintf("invalid MAIL_PORT: %s", portStr))
-	}
+	client := resend.NewClient(apiKey)
 
-	dialer := gomail.NewDialer(host, port, username, password)
-
-	logger.Info("Email use case initialized successfully",
-		zap.String("host", host),
-		zap.Int("port", port),
-		zap.String("username", username),
+	logger.Info("Email use case initialized successfully with Resend",
 		zap.String("from", from),
 	)
 
 	return &emailUseCase{
-		dialer: dialer,
+		client: client,
 		from:   from,
 		logger: logger,
 	}, nil
 }
 
-// SendPasswordResetEmail sends a password reset email with magic link
-func (uc *emailUseCase) SendPasswordResetEmail(to, resetLink string) error {
-	uc.logger.Info("Sending password reset email",
+// SendSessionTokenEmail sends a session token to the user's email
+func (uc *emailUseCase) SendSessionTokenEmail(to, token, baseURL string) error {
+	uc.logger.Info("Sending session token email",
 		zap.String("to", to),
-		zap.String("reset_link", resetLink),
 	)
 
-	subject := "Recovery Password - DafonCV"
+	loginLink := fmt.Sprintf("%s/api/v1/auth/login-with-token?token=%s", baseURL, token)
 
-	htmlBody := fmt.Sprintf(`
+	subject := "Welcome to Dafon CV - Your AI-Powered Resume Builder"
+	htmlContent := fmt.Sprintf(`
 		<!DOCTYPE html>
-		<html>
+		<html lang="en">
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Recovery Password</title>
-			<style>
-				body {
-					font-family: Arial, sans-serif;
-					line-height: 1.6;
-					color: #333;
-					max-width: 600px;
-					margin: 0 auto;
-					padding: 20px;
-				}
-				.header {
-					background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-					color: white;
-					padding: 30px;
-					text-align: center;
-					border-radius: 10px 10px 0 0;
-				}
-				.content {
-					background: #f9f9f9;
-					padding: 30px;
-					border-radius: 0 0 10px 10px;
-				}
-				.button {
-					display: inline-block;
-					background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-					color: white;
-					padding: 15px 30px;
-					text-decoration: none;
-					border-radius: 5px;
-					margin: 20px 0;
-					font-weight: bold;
-				}
-				.footer {
-					margin-top: 30px;
-					padding-top: 20px;
-					border-top: 1px solid #ddd;
-					font-size: 12px;
-					color: #666;
-				}
-				.warning {
-					background: #fff3cd;
-					border: 1px solid #ffeaa7;
-					padding: 15px;
-					border-radius: 5px;
-					margin: 20px 0;
-				}
-			</style>
+			<title>Dafon CV - AI Resume Builder</title>
 		</head>
-		<body>
-			<div class="header">
-				<h1>🔐 Recovery Password</h1>
-				<p>DafonCV - Curriculum System</p>
-			</div>
-			
-			<div class="content">
-				<h2>Hello!</h2>
-				<p>We received a request to reset your password on the DafonCV platform.</p>
-				
-				<p>If you did not request this change, you can safely ignore this email.</p>
-				
-				<div style="text-align: center;">
-					<a href="%s" class="button">🔑 Reset My Password</a>
+		<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh;">
+			<div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+				<!-- Glassmorphism Container -->
+				<div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); padding: 40px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+					
+					<!-- Header -->
+					<div style="text-align: center; margin-bottom: 40px;">
+						<div style="background: rgba(255, 255, 255, 0.2); border-radius: 50%%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3);">
+							<span style="font-size: 32px;">📄</span>
+						</div>
+						<h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Dafon CV</h1>
+						<p style="color: rgba(255, 255, 255, 0.8); margin: 10px 0 0; font-size: 16px; font-weight: 300;">AI-Powered Resume Builder</p>
+					</div>
+
+					<!-- Content -->
+					<div style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
+						<h2 style="color: #2c3e50; margin: 0 0 20px; font-size: 24px; font-weight: 400;">Welcome to Your Professional Journey</h2>
+						
+						<p style="color: #5a6c7d; line-height: 1.6; margin: 0 0 20px; font-size: 16px;">
+							Thank you for choosing <strong style="color: #667eea;">Dafon CV</strong> - the revolutionary platform that transforms your career story into stunning, AI-optimized resumes.
+						</p>
+
+						<p style="color: #5a6c7d; line-height: 1.6; margin: 0 0 30px; font-size: 16px;">
+							Our intelligent system analyzes your experience and creates personalized, ATS-friendly resumes that stand out to recruiters and hiring managers.
+						</p>
+
+						<!-- CTA Button -->
+						<div style="text-align: center; margin: 30px 0;">
+							<a href="%s" style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; border: none;">
+								🚀 Access Your Dashboard
+							</a>
+						</div>
+
+						<!-- Features -->
+						<div style="background: rgba(102, 126, 234, 0.1); border-radius: 10px; padding: 20px; margin: 30px 0;">
+							<h3 style="color: #667eea; margin: 0 0 15px; font-size: 18px; font-weight: 500;">✨ What makes Dafon CV special:</h3>
+							<ul style="color: #5a6c7d; margin: 0; padding-left: 20px; line-height: 1.8;">
+								<li><strong>AI-Powered Optimization:</strong> Smart content suggestions tailored to your industry</li>
+								<li><strong>ATS-Friendly Templates:</strong> Designed to pass Applicant Tracking Systems</li>
+								<li><strong>Real-time Analytics:</strong> Track your resume performance and views</li>
+								<li><strong>Multiple Formats:</strong> Export to PDF, Word, or share online</li>
+							</ul>
+						</div>
+
+						<!-- Security Notice -->
+						<div style="background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+							<p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+								<strong>🔒 Security Notice:</strong> This secure login link expires in 15 minutes and can only be used once. If you didn't request access to Dafon CV, please ignore this email.
+							</p>
+						</div>
+					</div>
+
+					<!-- Footer -->
+					<div style="text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+						<p style="margin: 0 0 10px;">Ready to build your dream career?</p>
+						<p style="margin: 0; font-size: 12px;">
+							© 2025 Dafon CV. Empowering professionals worldwide with AI-driven resume solutions.
+						</p>
+					</div>
 				</div>
-				
-				<div class="warning">
-					<strong>⚠️ Important:</strong>
-					<ul>
-						<li>This link is valid for 1 hour</li>
-						<li>Use it only once</li>
-						<li>Do not share this link with anyone</li>
-					</ul>
-				</div>
-				
-				<p>If the button doesn't work, copy and paste the link below into your browser:</p>
-				<p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 12px;">
-					%s
-				</p>
-			</div>
-			
-			<div class="footer">
-				<p>This is an automated email, do not reply to this message.</p>
-				<p>© 2024 DafonCV. All rights reserved.</p>
 			</div>
 		</body>
 		</html>
-	`, resetLink, resetLink)
+	`, loginLink)
 
-	textBody := fmt.Sprintf(`
-Reset Password - DafonCV
+	params := &resend.SendEmailRequest{
+		From:    uc.from,
+		To:      []string{to},
+		Subject: subject,
+		Html:    htmlContent,
+	}
 
-Hello!
-
-We received a request to reset your password on the DafonCV platform.
-
-If you did not request this change, you can safely ignore this email.
-
-To reset your password, access the link:
-%s
-
-⚠️ Important:
-- This link is valid for 1 hour
-- Use it only once
-- Do not share this link with anyone
-
-This is an automated email, do not reply to this message.
-
-© 2025 DafonCV. All rights reserved.
-	`, resetLink)
-
-	m := gomail.NewMessage()
-	m.SetHeader("From", uc.from)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/plain", textBody)
-	m.AddAlternative("text/html", htmlBody)
-
-	if err := uc.dialer.DialAndSend(m); err != nil {
-		uc.logger.Error("Failed to send password reset email",
+	sent, err := uc.client.Emails.Send(params)
+	if err != nil {
+		uc.logger.Error("Failed to send session token email",
 			zap.String("to", to),
 			zap.Error(err),
 		)
-		return errors.WrapError(errors.ErrEmailSendFailed, fmt.Sprintf("failed to send email to %s", to))
+		return errors.WrapError(errors.ErrEmailSendFailed, "failed to send session token email")
 	}
 
-	uc.logger.Info("Password reset email sent successfully",
+	uc.logger.Info("Session token email sent successfully",
 		zap.String("to", to),
+		zap.String("email_id", sent.Id),
 	)
 
 	return nil
 }
 
-// GenerateSecureToken generates a secure random token for password reset
+// GenerateSecureToken generates a secure random token for session
 func GenerateSecureToken() (string, error) {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
