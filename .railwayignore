@@ -1,0 +1,51 @@
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Docker files (not needed for Railway)
+docker-compose.yml
+docker-compose.override.yml
+Dockerfile.dev
+
+# Documentation
+README.md
+help.txt
+LICENSE
+
+# Git
+.git
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+*_test.go
+test/
+tests/
+
+# Build artifacts (will be rebuilt)
+main
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+tmp/
+temp/

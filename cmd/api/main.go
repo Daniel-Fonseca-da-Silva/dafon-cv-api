@@ -41,8 +41,19 @@ func main() {
 	router.RedirectFixedPath = false
 
 	// Configure CORS
+	allowedOrigins := []string{
+		"http://localhost:5173", "http://localhost:3000",
+		"http://127.0.0.1:5173", "http://127.0.0.1:3000",
+		"http://localhost:8080", "http://127.0.0.1:8080",
+	}
+
+	// Add Railway domain if APP_URL is set
+	if cfg.App.URL != "" {
+		allowedOrigins = append(allowedOrigins, cfg.App.URL)
+	}
+
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000", "http://localhost:8080", "http://127.0.0.1:8080"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
