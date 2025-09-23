@@ -25,6 +25,6 @@ FROM gcr.io/distroless/static-debian11:nonroot
 # Copy binary
 COPY --from=builder /app/main .
 
-EXPOSE $PORT
+EXPOSE 8080
 
 CMD ["./main"] 
