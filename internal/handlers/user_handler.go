@@ -76,6 +76,23 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// CreateUser handles POST /users request
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	var req dto.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	user, err := h.userUseCase.CreateUser(c.Request.Context(), &req)
+	if err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
 // DeleteUser handles DELETE /users/:id request
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
