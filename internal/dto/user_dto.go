@@ -32,3 +32,16 @@ type UsersResponse struct {
 	Users []UserResponse `json:"users"`
 	Total int            `json:"total"`
 }
+
+// SendAuthEmailRequest represents the request structure for sending authentication email
+type SendAuthEmailRequest struct {
+	Name     string `json:"name" binding:"required,min=2,max=100"`
+	Email    string `json:"email" binding:"required,email"`
+	URLToken string `json:"url_token" binding:"required,min=1"`
+}
+
+// SendAuthEmailResponse represents the response structure for sending authentication email
+type SendAuthEmailResponse struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}

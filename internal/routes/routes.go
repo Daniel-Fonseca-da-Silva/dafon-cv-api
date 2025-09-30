@@ -39,5 +39,8 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup configuration routes
 	SetupConfigurationRoutes(router, db, logger, cfg)
 
+	// Setup authentication email routes
+	SetupAuthEmailRoutes(router, logger, cfg)
+
 	return nil
 }
