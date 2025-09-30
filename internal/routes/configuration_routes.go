@@ -11,13 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
 	// Initialize configuration dependencies
 	configurationRepo := repositories.NewConfigurationRepository(db)
 	configurationUseCase := usecases.NewConfigurationUseCase(configurationRepo)
@@ -25,7 +19,8 @@ func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logge
 
 	// Configuration routes group (protected with authentication)
 	configuration := router.Group("/api/v1/configuration")
-	configuration.Use(middleware.AuthMiddleware(jwtConfig))
+	configuration.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		configuration.GET("/user/:user_id", configurationHandler.GetConfigurationByUserID)
 		configuration.PATCH("/:id", configurationHandler.UpdateConfiguration)
