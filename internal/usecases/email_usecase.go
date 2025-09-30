@@ -13,7 +13,7 @@ import (
 
 // EmailUseCase defines the interface for email operations
 type EmailUseCase interface {
-	SendSessionTokenEmail(to, name, token, baseURL string) error
+	SendSessionTokenEmail(to, name, token string) error
 }
 
 // emailUseCase implements EmailUseCase interface
@@ -55,7 +55,7 @@ func NewEmailUseCase(logger *zap.Logger) (EmailUseCase, error) {
 }
 
 // SendSessionTokenEmail sends a session token to the user's email
-func (uc *emailUseCase) SendSessionTokenEmail(to, name, token, baseURL string) error {
+func (uc *emailUseCase) SendSessionTokenEmail(to, name, token string) error {
 	uc.logger.Info("Sending session token email",
 		zap.String("to", to),
 		zap.String("name", name),
