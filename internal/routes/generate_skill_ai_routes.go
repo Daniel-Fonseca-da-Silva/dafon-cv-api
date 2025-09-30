@@ -10,13 +10,7 @@ import (
 )
 
 // SetupGenerateSkillAIRoutes configures AI skill generation-related routes
-func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
 	generateSkillAIUseCase, err := usecases.NewGenerateSkillAIUseCase()
 	if err != nil {
 		logger.Error("Failed to create Generate Skill AI usecase", zap.Error(err))
@@ -26,7 +20,8 @@ func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase)
 
 	generateSkill := router.Group("/api/v1/generate-skill-ai")
-	generateSkill.Use(middleware.AuthMiddleware(jwtConfig))
+	generateSkill.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		generateSkill.POST("", generateSkillAIHandler.FilterContent)
 	}

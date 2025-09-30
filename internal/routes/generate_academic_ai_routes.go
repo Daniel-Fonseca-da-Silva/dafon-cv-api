@@ -10,13 +10,7 @@ import (
 )
 
 // SetupGenerateAcademicAIRoutes configures AI filtering-related routes
-func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
 	generateAcademicAIUseCase, err := usecases.NewGenerateAcademicAIUseCase()
 	if err != nil {
 		logger.Error("Failed to create Generate Academic AI usecase", zap.Error(err))
@@ -26,7 +20,8 @@ func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	generateAcademicAIHandler := handlers.NewGenerateAcademicAIHandler(generateAcademicAIUseCase)
 
 	generateAcademic := router.Group("/api/v1/generate-academic-ai")
-	generateAcademic.Use(middleware.AuthMiddleware(jwtConfig))
+	generateAcademic.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		generateAcademic.POST("", generateAcademicAIHandler.FilterContent)
 	}
