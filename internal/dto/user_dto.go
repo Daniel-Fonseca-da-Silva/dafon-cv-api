@@ -6,6 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// RegisterRequest represents the request structure for user registration
+type RegisterRequest struct {
+	Name  string `json:"name" binding:"required,min=10,max=100"`
+	Email string `json:"email" binding:"required,email"`
+}
+
 // UpdateUserRequest represents the request structure for updating a user
 type UpdateUserRequest struct {
 	Name  string `json:"name" binding:"omitempty,min=10,max=100"`
