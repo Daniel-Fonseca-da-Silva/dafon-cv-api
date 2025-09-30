@@ -10,13 +10,7 @@ import (
 )
 
 // SetupGenerateCoursesAIRoutes configures AI filtering-related routes
-func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
 	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase()
 	if err != nil {
 		logger.Error("Failed to create Generate Courses AI usecase", zap.Error(err))
@@ -26,7 +20,8 @@ func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	generateCoursesAIHandler := handlers.NewGenerateCoursesAIHandler(generateCoursesAIUseCase)
 
 	generateCourses := router.Group("/api/v1/generate-courses-ai")
-	generateCourses.Use(middleware.AuthMiddleware(jwtConfig))
+	generateCourses.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		generateCourses.POST("", generateCoursesAIHandler.FilterContent)
 	}

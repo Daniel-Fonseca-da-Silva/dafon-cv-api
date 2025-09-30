@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -17,33 +16,28 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Health check endpoint
 	router.GET("/health", healthHandler.HealthCheck)
 
-	// Setup auth routes
-	if err := SetupAuthRoutes(router, db, logger, cfg); err != nil {
-		return errors.WrapError(err, "failed to setup auth routes")
-	}
-
 	// Setup user routes
-	SetupUserRoutes(router, db, logger)
+	SetupUserRoutes(router, db, logger, cfg)
 
 	// Setup curriculum routes
-	SetupCurriculumRoutes(router, db, logger)
+	SetupCurriculumRoutes(router, db, logger, cfg)
 
 	// Setup AI analysis routes
-	SetupGenerateIntroAIRoutes(router, logger)
+	SetupGenerateIntroAIRoutes(router, logger, cfg)
 	// Setup generate courses AI routes
-	SetupGenerateCoursesAIRoutes(router, logger)
+	SetupGenerateCoursesAIRoutes(router, logger, cfg)
 
 	// Setup generate academic AI routes
-	SetupGenerateAcademicAIRoutes(router, logger)
+	SetupGenerateAcademicAIRoutes(router, logger, cfg)
 
 	// Setup generate task AI routes
-	SetupGenerateTaskAIRoutes(router, logger)
+	SetupGenerateTaskAIRoutes(router, logger, cfg)
 
 	// Setup generate skill AI routes
-	SetupGenerateSkillAIRoutes(router, logger)
+	SetupGenerateSkillAIRoutes(router, logger, cfg)
 
 	// Setup configuration routes
-	SetupConfigurationRoutes(router, db, logger)
+	SetupConfigurationRoutes(router, db, logger, cfg)
 
 	return nil
 }

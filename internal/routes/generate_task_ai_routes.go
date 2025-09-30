@@ -10,13 +10,7 @@ import (
 )
 
 // SetupGenerateTaskAIRoutes configures AI filtering-related routes
-func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
 	generateTaskAIUseCase, err := usecases.NewGenerateTaskAIUseCase()
 	if err != nil {
 		logger.Error("Failed to create Generate Task AI usecase", zap.Error(err))
@@ -26,7 +20,8 @@ func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	generateTaskAIHandler := handlers.NewGenerateTaskAIHandler(generateTaskAIUseCase)
 
 	generateTasks := router.Group("/api/v1/generate-task-ai")
-	generateTasks.Use(middleware.AuthMiddleware(jwtConfig))
+	generateTasks.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		generateTasks.POST("", generateTaskAIHandler.FilterContent)
 	}

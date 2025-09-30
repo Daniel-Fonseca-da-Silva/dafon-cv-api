@@ -12,27 +12,22 @@ import (
 )
 
 // SetupUserRoutes configures user-related routes
-func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
 	// Initialize user dependencies
 	userRepo := repositories.NewUserRepository(db)
 	configurationRepo := repositories.NewConfigurationRepository(db)
 	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
 	userHandler := handlers.NewUserHandler(userUseCase)
 
-	// User routes group (protected with authentication)
-	users := router.Group("/api/v1/users")
-	users.Use(middleware.AuthMiddleware(jwtConfig))
+	// Protected user routes (require authentication)
+	protectedUsers := router.Group("/api/v1/user")
+	protectedUsers.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
-		// Removing POST / - user creation is now done via /auth/register
-		users.GET("/", userHandler.GetAllUsers)      // Get all users
-		users.GET("/:id", userHandler.GetUserByID)   // Get user by ID
-		users.PATCH("/:id", userHandler.UpdateUser)  // Update user
-		users.DELETE("/:id", userHandler.DeleteUser) // Delete user
+		protectedUsers.POST("", userHandler.CreateUser)
+		protectedUsers.GET("/all", userHandler.GetAllUsers)   // Get all users
+		protectedUsers.GET("/:id", userHandler.GetUserByID)   // Get user by ID
+		protectedUsers.PATCH("/:id", userHandler.UpdateUser)  // Update user
+		protectedUsers.DELETE("/:id", userHandler.DeleteUser) // Delete user
 	}
 }

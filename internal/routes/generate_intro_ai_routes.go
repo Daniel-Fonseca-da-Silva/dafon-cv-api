@@ -10,13 +10,7 @@ import (
 )
 
 // SetupGenerateIntroAIRoutes configures AI filtering-related routes
-func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
 	generateIntroAIUseCase, err := usecases.NewGenerateIntroAIUseCase()
 	if err != nil {
 		logger.Error("Failed to create Generate Intro AI usecase", zap.Error(err))
@@ -26,7 +20,8 @@ func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger) {
 	generateIntroAIHandler := handlers.NewGenerateIntroAIHandler(generateIntroAIUseCase)
 
 	generateIntros := router.Group("/api/v1/generate-intro-ai")
-	generateIntros.Use(middleware.AuthMiddleware(jwtConfig))
+	generateIntros.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		generateIntros.POST("", generateIntroAIHandler.FilterContent)
 	}

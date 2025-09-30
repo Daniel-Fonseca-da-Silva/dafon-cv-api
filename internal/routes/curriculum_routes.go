@@ -12,13 +12,7 @@ import (
 )
 
 // SetupCurriculumRoutes configures curriculum-related routes
-func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) {
-	// Initialize JWT configuration
-	jwtConfig, err := config.NewJWTConfig(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize JWT config", zap.Error(err))
-	}
-
+func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
 	// Initialize curriculum dependencies
 	curriculumRepo := repositories.NewCurriculumRepository(db)
 	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo)
@@ -31,7 +25,8 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger) 
 	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
 
 	curriculums := router.Group("/api/v1/curriculums")
-	curriculums.Use(middleware.AuthMiddleware(jwtConfig))
+	curriculums.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+
 	{
 		curriculums.POST("", curriculumHandler.CreateCurriculum)
 		curriculums.GET("/:id", curriculumHandler.GetCurriculumByID)

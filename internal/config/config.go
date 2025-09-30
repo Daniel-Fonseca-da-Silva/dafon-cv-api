@@ -41,7 +41,8 @@ type EmailConfig struct {
 
 // AppConfig holds application configuration
 type AppConfig struct {
-	URL string
+	URL         string
+	StaticToken string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -61,6 +62,7 @@ func LoadConfig() *Config {
 
 	// App configuration
 	appURL := os.Getenv("APP_URL")
+	staticToken := os.Getenv("BACKEND_APIKEY")
 
 	return &Config{
 		Port: port,
@@ -78,7 +80,8 @@ func LoadConfig() *Config {
 			From:   emailFrom,
 		},
 		App: AppConfig{
-			URL: appURL,
+			URL:         appURL,
+			StaticToken: staticToken,
 		},
 	}
 }
