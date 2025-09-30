@@ -13,7 +13,7 @@ import (
 
 // EmailUseCase defines the interface for email operations
 type EmailUseCase interface {
-	SendSessionTokenEmail(to, token, baseURL string) error
+	SendSessionTokenEmail(to, name, token, baseURL string) error
 }
 
 // emailUseCase implements EmailUseCase interface
@@ -55,12 +55,15 @@ func NewEmailUseCase(logger *zap.Logger) (EmailUseCase, error) {
 }
 
 // SendSessionTokenEmail sends a session token to the user's email
-func (uc *emailUseCase) SendSessionTokenEmail(to, token, baseURL string) error {
+func (uc *emailUseCase) SendSessionTokenEmail(to, name, token, baseURL string) error {
 	uc.logger.Info("Sending session token email",
 		zap.String("to", to),
+		zap.String("name", name),
 	)
 
-	loginLink := fmt.Sprintf("%s/api/v1/auth/login-with-token?token=%s", baseURL, token)
+	// The token is passed directly from the frontend, no need to create a link
+	// The frontend will handle the token processing
+	loginLink := token
 
 	subject := "Welcome to Dafon CV - Your AI-Powered Resume Builder"
 	htmlContent := fmt.Sprintf(`
@@ -87,7 +90,7 @@ func (uc *emailUseCase) SendSessionTokenEmail(to, token, baseURL string) error {
 
 					<!-- Content -->
 					<div style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
-						<h2 style="color: #2c3e50; margin: 0 0 20px; font-size: 24px; font-weight: 400;">Welcome to Your Professional Journey</h2>
+						<h2 style="color: #2c3e50; margin: 0 0 20px; font-size: 24px; font-weight: 400;">Welcome to Your Professional Journey, %s!</h2>
 						
 						<p style="color: #5a6c7d; line-height: 1.6; margin: 0 0 20px; font-size: 16px;">
 							Thank you for choosing <strong style="color: #667eea;">Dafon CV</strong> - the revolutionary platform that transforms your career story into stunning, AI-optimized resumes.
@@ -134,7 +137,7 @@ func (uc *emailUseCase) SendSessionTokenEmail(to, token, baseURL string) error {
 			</div>
 		</body>
 		</html>
-	`, loginLink)
+	`, name, loginLink)
 
 	params := &resend.SendEmailRequest{
 		From:    uc.from,
