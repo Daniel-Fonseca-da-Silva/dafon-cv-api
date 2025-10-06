@@ -42,8 +42,7 @@ func StaticTokenMiddleware(staticToken string) gin.HandlerFunc {
 			return
 		}
 
-		// Set a generic user ID for static token authentication
-		c.Set("user_id", "static_user")
+		// Token is valid, proceed to the next handler
 		c.Next()
 	}
 }

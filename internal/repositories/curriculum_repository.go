@@ -35,6 +35,6 @@ func (cu *curriculumRepository) Create(ctx context.Context, curriculum *models.C
 // GetByID retrieves a curriculum by ID
 func (cu *curriculumRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error) {
 	var curriculum models.Curriculums
-	err := cu.db.WithContext(ctx).Preload("Works").Where("id = ?", id).First(&curriculum).Error
+	err := cu.db.WithContext(ctx).Preload("Works").Preload("Educations").Where("id = ?", id).First(&curriculum).Error
 	return &curriculum, err
 }
