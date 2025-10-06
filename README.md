@@ -6,18 +6,39 @@
 
 A robust REST API for CV management with AI features for automatic professional content generation.
 
-## 🎯 Purpose
+## 🧭 Table of Contents
+
+1. Purpose and Value Proposition
+2. Architecture Overview
+3. Detailed Flows and Diagrams
+4. Data Model (ERD)
+5. API Documentation
+6. Configuration and Environment
+7. Security and Hardening
+8. Observability (Logging, Health, Metrics)
+9. DevOps and Deployment (Docker, Compose, CI/CD)
+10. Performance and Scalability
+11. Troubleshooting and Runbooks
+12. Contributing, License, Author
+
+---
+
+## 🎯 Purpose and Value Proposition
 
 **dafon-cv-api** is a complete solution for creating and managing professional CVs, offering:
 
-- ✅ Secure email-based authentication system
+- ✅ Secure email-based authentication system (passwordless)
 - ✅ Complete CV CRUD operations
 - ✅ Automatic content generation with AI (OpenAI)
-- ✅ Robust data validation
-- ✅ Well-documented REST API
-- ✅ Clean and scalable architecture
+- ✅ Robust data validation (emails, phones, strong passwords)
+- ✅ Clean and scalable architecture with clear boundaries
+- ✅ Production-grade containerization and health checks
 
-## 🏗️ Architecture
+Target users: professionals, recruiters, freelancers and students who need high-quality resumes, with AI assistance and structured data management.
+
+---
+
+## 🏗️ Architecture Overview
 
 The project follows **Clean Architecture** principles with clear separation of concerns:
 
@@ -25,126 +46,157 @@ The project follows **Clean Architecture** principles with clear separation of c
 ├── cmd/api/           # Application entry point
 ├── internal/
 │   ├── config/        # Application configuration
-│   ├── database/      # Database configuration
-│   ├── dto/           # Data Transfer Objects
-│   ├── errors/        # Custom error handling
-│   ├── handlers/      # Presentation layer (HTTP)
+│   ├── database/      # Database configuration (GORM, migrations)
+│   ├── dto/           # Data Transfer Objects (request/response)
+│   ├── errors/        # Custom error types and wrappers
+│   ├── handlers/      # Presentation layer (HTTP handlers)
 │   ├── middleware/    # Middlewares (Auth, CORS, etc.)
-│   ├── models/        # Domain entities
-│   ├── repositories/  # Data access layer
+│   ├── models/        # Domain entities (GORM models)
+│   ├── repositories/  # Data access (interfaces + impl)
 │   ├── routes/        # Route definitions
 │   ├── usecases/      # Business logic
 │   └── utils/         # Utilities and validations
 ```
 
-## 🚀 Technologies
+### High-level Architecture Diagram
 
-### Backend
-- **Go 1.24.1** - Main language
-- **Gin** - Web framework
-- **GORM** - Database ORM
-- **MySQL 8.0** - Database
-- **JWT** - Authentication
-- **Zap** - Structured logging
+```mermaid
+flowchart LR
+  subgraph Client
+    A[Web/Mobile Client]
+  end
 
-### AI and Integrations
-- **OpenAI GPT-4o-mini** - Content generation
-- **Resend** - Email sending
-- **Google UUID** - Unique ID generation
+  subgraph API
+    B[GIN Router]
+    C[Middleware\nCORS, Auth]
+    D[Handlers]
+    E[Use Cases]
+    F[Repositories]
+  end
 
-### DevOps
-- **Docker & Docker Compose** - Containerization
-- **Multi-stage builds** - Image optimization
-- **Health checks** - Health monitoring
+  subgraph External Services
+    G[(MySQL 8.0)]
+    H[OpenAI]
+    I[Resend]
+  end
 
-## 📋 Features
-
-### 🔐 Authentication
-- **Passwordless login**: Email-based authentication with temporary tokens
-- **User registration**: Account creation with validation
-- **JWT**: Secure tokens for sessions
-- **Logout**: Session invalidation
-
-### 📄 CV Management
-- **Complete CRUD**: Create, read, update and delete CVs
-- **Robust validation**: Data validated with specialized libraries
-- **Relationships**: Users, CVs, works and configurations
-
-### 🤖 AI Content Generation
-- **Professional introductions**: Automatic presentation generation
-- **Course lists**: Course and certification suggestions
-- **Task descriptions**: Professional description improvements
-- **Multiple languages**: Support for Portuguese, English and Spanish
-
-### ⚙️ Configuration
-- **User profile**: Customizable settings
-- **Preferences**: Application settings
-- **Validation**: Real-time data validation
-
-## 🛠️ Installation and Setup
-
-### Prerequisites
-- Go 1.24.1+
-- Docker and Docker Compose
-- MySQL 8.0+ (or use Docker)
-- OpenAI API key
-- Resend API key
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/Daniel-Fonseca-da-Silva/dafon-cv-api.git
-cd dafon-cv-api
+  A -->|HTTP/JSON| B --> C --> D --> E --> F --> G
+  E --> H
+  E --> I
 ```
 
-### 2. Configure environment variables
-Create a `.env` file in the project root with the following variables:
+---
 
-**Required variables:**
-- `OPENAI_API_KEY` - OpenAI API key
-- `RESEND_API_KEY` - Resend API key for emails  
-- `JWT_SECRET` - JWT secret key (generate a secure string)
-- `DB_PASSWORD` - Database password
-- `MYSQL_ROOT_PASSWORD` - MySQL root password
+## 🔁 Detailed Flows and Diagrams
 
-**Optional variables:**
-- `PORT` - Server port (default: 8080)
-- `GIN_MODE` - Gin mode (default: release)
-- `DB_HOST` - Database host (default: localhost)
-- `DB_PORT` - Database port (default: 3306)
-- `DB_NAME` - Database name (default: dafon_cv)
-- `JWT_DURATION` - JWT duration (default: 24h)
-- `SESSION_DURATION` - Session duration (default: 1h)
-- `APP_URL` - Application URL (default: http://localhost:8080)
+### Authentication (Passwordless + JWT) - Sequence Diagram
 
-> ⚠️ **Important**: Never commit the `.env` file to the repository. It's already in `.gitignore`.
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant API as dafon-cv-api
+  participant E as Email Service (Resend)
+  participant DB as MySQL
 
-### 3. Run with Docker (Recommended)
-```bash
-# Build and run
-docker compose up -d --build
-
-# Just run (if already built)
-docker compose up -d
-
-# Stop services
-docker compose down
+  U->>API: POST /auth/login { email }
+  API->>DB: Create login token + session (expires)
+  API->>E: Send login link/token via email
+  E-->>U: Email with token
+  U->>API: GET /auth/login-with-token?token=...
+  API->>DB: Validate token and session expiry
+  API-->>U: 200 OK { jwt, user }
+  U->>API: Uses JWT for protected routes
+  API->>DB: Validate session on each request
 ```
 
-### 4. Run locally (Development)
-```bash
-# Install dependencies
-go mod download
+### AI Content Generation - Flow
 
-# Run migrations
-go run cmd/api/main.go
-
-# Or run directly
-go run cmd/api/main.go
+```mermaid
+flowchart TD
+  A[Request: POST /ai/generate-intro] --> B[Validate payload]
+  B --> C[Build prompt]
+  C --> D[OpenAI Completion]
+  D -->|Success| E[Sanitize and shape response]
+  D -->|Error| F[Return error with context]
+  E --> G[200 OK: filtered content]
 ```
 
-## 📚 API Endpoints
+---
 
-### 🔐 Authentication
+## 🗂️ Data Model (ERD)
+
+```mermaid
+erDiagram
+  USERS ||--o{ SESSIONS : has
+  USERS ||--o{ CURRICULUMS : owns
+  USERS ||--|| CONFIGURATIONS : has
+  CURRICULUMS ||--o{ WORKS : includes
+  CURRICULUMS ||--o{ EDUCATIONS : includes
+
+  USERS {
+    uuid ID PK
+    string NAME
+    string EMAIL unique
+    datetime CREATED_AT
+    datetime UPDATED_AT
+  }
+
+  SESSIONS {
+    uuid ID PK
+    uuid USER_ID FK
+    string TOKEN unique
+    datetime EXPIRES_AT index
+  }
+
+  CONFIGURATIONS {
+    uuid ID PK
+    uuid USER_ID unique
+    string LANGUAGE
+    bool NEWSLETTER
+    bool RECEIVE_EMAILS
+  }
+
+  CURRICULUMS {
+    uuid ID PK
+    uuid USER_ID FK
+    string FULL_NAME
+    string EMAIL
+    string PHONE
+    text INTRO
+    text SKILLS
+    text LANGUAGES
+    text COURSES
+    text SOCIAL_LINKS
+  }
+
+  WORKS {
+    uuid ID PK
+    uuid CURRICULUM_ID FK
+    string POSITION
+    string COMPANY
+    text DESCRIPTION
+    date START_DATE
+    date END_DATE nullable
+  }
+
+  EDUCATIONS {
+    uuid ID PK
+    uuid CURRICULUM_ID FK
+    string INSTITUTION
+    string DEGREE
+    date START_DATE
+    date END_DATE nullable
+    text DESCRIPTION
+  }
+```
+
+---
+
+## 📚 API Documentation
+
+### Authentication
+
 ```http
 POST /auth/register          # Register user
 POST /auth/login             # Login (sends token via email)
@@ -152,14 +204,16 @@ GET  /auth/login-with-token  # Login with token
 POST /auth/logout            # Logout
 ```
 
-### 👤 Users
+### Users
+
 ```http
 GET    /users/profile        # Get user profile
 PUT    /users/profile        # Update profile
 DELETE /users/account        # Delete account
 ```
 
-### 📄 CVs
+### Curriculums
+
 ```http
 GET    /curriculums          # List CVs
 POST   /curriculums          # Create CV
@@ -168,130 +222,167 @@ PUT    /curriculums/:id      # Update CV
 DELETE /curriculums/:id      # Delete CV
 ```
 
-### 🤖 AI - Content Generation
+### AI - Content Generation
+
 ```http
 POST /ai/generate-intro      # Generate professional introduction
 POST /ai/generate-courses    # Generate course list
 POST /ai/generate-tasks      # Generate task descriptions
 ```
 
-### ⚙️ Configuration
+### Configurations
+
 ```http
 GET /configurations          # Get configurations
 PUT /configurations          # Update configurations
 ```
 
-### 🏥 Health Check
+### Health
+
 ```http
 GET /health                  # Application status
 ```
 
-## 🔧 Usage Examples
+> Tip: Use the `Authorization: Bearer <JWT>` header for protected resources.
 
-### Register a user
+---
+
+## ⚙️ Configuration and Environment
+
+Create a `.env` file in the project root:
+
+Required:
+- `OPENAI_API_KEY`
+- `RESEND_API_KEY`
+- `DB_PASSWORD`
+- `MYSQL_ROOT_PASSWORD`
+
+Optional:
+- `PORT` (default: 8080)
+- `GIN_MODE` (default: release)
+- `DB_HOST` (default: localhost)
+- `DB_PORT` (default: 3306)
+- `DB_NAME` (default: dafon_cv)
+- `APP_URL` (used for CORS)
+- `BACKEND_APIKEY` (for static token middleware, if enabled)
+
+> Never commit `.env` files. They are ignored via `.gitignore`.
+
+---
+
+## 🔒 Security and Hardening
+
+- Use HTTPS in production (terminate TLS at reverse proxy)
+- Configure CORS origins via `APP_URL`
+- Enable rate limiting (e.g., at API gateway or reverse proxy)
+- Rotate secrets and API keys regularly
+- Avoid static tokens in production; prefer JWT with short TTL
+- Sanitize inputs and validate payloads (already implemented via validators)
+- Run containers as non-root (distroless base already configured)
+
+---
+
+## 📈 Observability (Logging, Health, Metrics)
+
+- Structured logging via Zap
+- Health endpoint: `GET /health`
+- Container health checks configured for API and MySQL
+- Add metrics (suggestion): Prometheus + Grafana (future enhancement)
+
+---
+
+## 🐳 DevOps and Deployment
+
+### Dockerfile (Multi-stage + Distroless)
+
+- Build with Go Alpine, output static binary
+- Final image: Distroless nonroot for minimal attack surface
+
+### docker-compose
+
+- MySQL 8.0 + persistent volume
+- API service depends on DB health, exposes `8080`
+- Health checks configured para ambos serviços
+
+Run:
+
 ```bash
-curl -X POST http://localhost:8080/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Silva",
-    "email": "john@example.com"
-  }'
-```
-
-### Login (will receive token via email)
-```bash
-curl -X POST http://localhost:8080/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com"
-  }'
-```
-
-### Create a CV
-```bash
-curl -X POST http://localhost:8080/curriculums \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "full_name": "John Silva",
-    "email": "john@example.com",
-    "phone": "+5511999999999",
-    "intro": "Experienced developer...",
-    "technologies": "Go, Python, JavaScript",
-    "languages": "Portuguese, English",
-    "level_education": "Bachelor Degree"
-  }'
-```
-
-### Generate content with AI
-```bash
-curl -X POST http://localhost:8080/ai/generate-intro \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Go developer with 5 years of experience"
-  }'
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run specific tests
-go test ./internal/usecases/...
-```
-
-## 📊 Monitoring
-
-### Health Check
-```bash
-curl http://localhost:8080/health
-```
-
-### Logs
-```bash
-# View container logs
+docker compose up -d --build
 docker compose logs -f api
-
-# View database logs
-docker compose logs -f mysql
 ```
 
-## 🔒 Security
+### CI/CD (Suggestion)
 
-- ✅ **JWT** for authentication
-- ✅ **CORS** configured
-- ✅ **Input validation**
-- ✅ **Data sanitization**
-- ✅ **Rate limiting** (recommended for production)
-- ✅ **HTTPS** (recommended for production)
+- Lint + test on PRs
+- Build image, scan vulnerabilities (Trivy/Grype)
+- Push to registry, deploy (Railway/Render/Fly.io)
 
-## 🚀 Deployment
+### Deployment Diagram
 
-### Production
-1. Configure production environment variables
-2. Use `GIN_MODE=release`
-3. Configure HTTPS
-4. Implement rate limiting
-5. Configure monitoring
-6. Use managed database
+```mermaid
+flowchart LR
+  Dev[Developer] --> CI[CI Pipeline]
+  CI --> IMG[Container Registry]
+  IMG --> PROD[Production Runtime]
+  subgraph PROD
+    API[API Service]
+    DB[(Managed MySQL)]
+  end
+  API <--> DB
+  Users[End Users] --> API
+```
 
-### Docker
+---
+
+## 🚀 Performance and Scalability
+
+- Prefer connection pooling tuning (GORM + MySQL)
+- Cache hot reads (e.g., Redis) for AI responses or frequent lists
+- Apply pagination in list endpoints
+- Consider async processing for heavy AI requests
+
+---
+
+## 🧯 Troubleshooting and Runbooks
+
+Common checks:
+- `GET /health` returns 200
+- `docker compose logs -f api` and `-f mysql`
+- Validate env vars loaded in `internal/config`
+- Database reachable from API (`DB_HOST`, `DB_PORT`)
+
+Frequent issues:
+- 401 on protected routes: missing/invalid JWT
+- 400 validation: check DTO constraints (min/max/email/uuid/phone)
+- OpenAI errors: ensure `OPENAI_API_KEY`, verify quota/availability
+
+---
+
+## 🛠️ Installation and Local Setup
+
+Prerequisites: Go 1.24.1+, Docker, Docker Compose, OpenAI key, Resend key
+
+Clone:
+
 ```bash
-# Build for production
-docker build -t dafon-cv-api:latest .
-
-# Run in production
-docker run -d \
-  --name dafon-cv-api \
-  -p 8080:8080 \
-  --env-file .env.production \
-  dafon-cv-api:latest
+git clone https://github.com/Daniel-Fonseca-da-Silva/dafon-cv-api.git
+cd dafon-cv-api
 ```
+
+Run with Docker:
+
+```bash
+docker compose up -d --build
+```
+
+Run locally (dev):
+
+```bash
+go mod download
+go run cmd/api/main.go
+```
+
+---
 
 ## 🤝 Contributing
 
@@ -310,13 +401,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Daniel Fonseca da Silva**
 - GitHub: [@Daniel-Fonseca-da-Silva](https://github.com/Daniel-Fonseca-da-Silva)
 
-## 🙏 Acknowledgments
-
-- [Gin](https://gin-gonic.com/) - Web framework
-- [GORM](https://gorm.io/) - ORM
-- [OpenAI](https://openai.com/) - AI for content generation
-- [Resend](https://resend.com/) - Email service
-
 ---
 
-⭐ **If this project was helpful to you, consider giving it a star!**
+⭐ If this project was helpful to you, consider giving it a star!
