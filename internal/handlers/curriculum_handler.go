@@ -47,18 +47,14 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 		return
 	}
 
-	userIDStr, ok := c.Get("user_id")
-	if !ok {
-		utils.HandleValidationError(c, errors.New("user not authenticated"))
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr.(string))
+	// Get user ID from request body
+	userUUID, err := uuid.Parse(req.UserID)
 	if err != nil {
-		utils.HandleValidationError(c, errors.New("invalid user ID in context"))
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
-	// Verify if the authenticated user exists in the database
+	// Verify if the user exists in the database
 	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userUUID)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("user not found"))

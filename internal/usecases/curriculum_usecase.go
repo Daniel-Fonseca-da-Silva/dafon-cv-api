@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
@@ -33,25 +32,16 @@ func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository) Curr
 func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error) {
 	// Create curriculum model
 	curriculum := &models.Curriculums{
-		FullName:       req.FullName,
-		Email:          req.Email,
-		Phone:          req.Phone,
-		DriverLicense:  req.DriverLicense,
-		Intro:          req.Intro,
-		Technologies:   req.Technologies,
-		Languages:      req.Languages,
-		LevelEducation: req.LevelEducation,
-		Courses:        req.Courses,
-		SocialLinks:    req.SocialLinks,
-		JobDescription: req.JobDescription,
-		UserID:         userID,
-	}
-
-	// Handle optional DateDisponibility field
-	if req.DateDisponibility != nil {
-		curriculum.DateDisponibility = *req.DateDisponibility
-	} else {
-		curriculum.DateDisponibility = time.Now() // Default to current time if not provided
+		FullName:      req.FullName,
+		Email:         req.Email,
+		Phone:         req.Phone,
+		DriverLicense: req.DriverLicense,
+		Intro:         req.Intro,
+		Skills:        req.Skills,
+		Languages:     req.Languages,
+		Courses:       req.Courses,
+		SocialLinks:   req.SocialLinks,
+		UserID:        userID,
 	}
 
 	// Validate the curriculum model
@@ -63,13 +53,25 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 	// Create works associated with curriculum
 	for _, workReq := range req.Works {
 		work := models.Work{
-			JobTitle:           workReq.JobTitle,
-			CompanyName:        workReq.CompanyName,
-			CompanyDescription: workReq.CompanyDescription,
-			StartDate:          workReq.StartDate,
-			EndDate:            workReq.EndDate,
+			Position:    workReq.Position,
+			Company:     workReq.Company,
+			Description: workReq.Description,
+			StartDate:   workReq.StartDate,
+			EndDate:     workReq.EndDate,
 		}
 		curriculum.Works = append(curriculum.Works, work)
+	}
+
+	// Create educations associated with curriculum
+	for _, educationReq := range req.Educations {
+		education := models.Education{
+			Institution: educationReq.Institution,
+			Degree:      educationReq.Degree,
+			StartDate:   educationReq.StartDate,
+			EndDate:     educationReq.EndDate,
+			Description: educationReq.Description,
+		}
+		curriculum.Educations = append(curriculum.Educations, education)
 	}
 
 	// Save to database (GORM will handle the foreign key relationship)
@@ -81,35 +83,48 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 	worksResponse := make([]dto.WorkResponse, 0, len(curriculum.Works))
 	for _, work := range curriculum.Works {
 		worksResponse = append(worksResponse, dto.WorkResponse{
-			ID:                 work.ID,
-			JobTitle:           work.JobTitle,
-			CompanyName:        work.CompanyName,
-			CompanyDescription: work.CompanyDescription,
-			StartDate:          work.StartDate,
-			EndDate:            work.EndDate,
-			CreatedAt:          work.CreatedAt,
-			UpdatedAt:          work.UpdatedAt,
+			ID:          work.ID,
+			Position:    work.Position,
+			Company:     work.Company,
+			Description: work.Description,
+			StartDate:   work.StartDate,
+			EndDate:     work.EndDate,
+			CreatedAt:   work.CreatedAt,
+			UpdatedAt:   work.UpdatedAt,
+		})
+	}
+
+	// Prepare educations response
+	educationsResponse := make([]dto.EducationResponse, 0, len(curriculum.Educations))
+	for _, education := range curriculum.Educations {
+		educationsResponse = append(educationsResponse, dto.EducationResponse{
+			ID:          education.ID,
+			Institution: education.Institution,
+			Degree:      education.Degree,
+			StartDate:   education.StartDate,
+			EndDate:     education.EndDate,
+			Description: education.Description,
+			CreatedAt:   education.CreatedAt,
+			UpdatedAt:   education.UpdatedAt,
 		})
 	}
 
 	// Return response
 	return &dto.CurriculumResponse{
-		ID:                curriculum.ID,
-		FullName:          curriculum.FullName,
-		Email:             curriculum.Email,
-		Phone:             curriculum.Phone,
-		DriverLicense:     curriculum.DriverLicense,
-		Intro:             curriculum.Intro,
-		Technologies:      curriculum.Technologies,
-		DateDisponibility: curriculum.DateDisponibility,
-		Languages:         curriculum.Languages,
-		LevelEducation:    curriculum.LevelEducation,
-		Courses:           curriculum.Courses,
-		SocialLinks:       curriculum.SocialLinks,
-		JobDescription:    curriculum.JobDescription,
-		Works:             worksResponse,
-		CreatedAt:         curriculum.CreatedAt,
-		UpdatedAt:         curriculum.UpdatedAt,
+		ID:            curriculum.ID,
+		FullName:      curriculum.FullName,
+		Email:         curriculum.Email,
+		Phone:         curriculum.Phone,
+		DriverLicense: curriculum.DriverLicense,
+		Intro:         curriculum.Intro,
+		Skills:        curriculum.Skills,
+		Languages:     curriculum.Languages,
+		Courses:       curriculum.Courses,
+		SocialLinks:   curriculum.SocialLinks,
+		Works:         worksResponse,
+		Educations:    educationsResponse,
+		CreatedAt:     curriculum.CreatedAt,
+		UpdatedAt:     curriculum.UpdatedAt,
 	}, nil
 }
 
@@ -124,33 +139,46 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 	worksResponse := make([]dto.WorkResponse, 0, len(curriculum.Works))
 	for _, work := range curriculum.Works {
 		worksResponse = append(worksResponse, dto.WorkResponse{
-			ID:                 work.ID,
-			JobTitle:           work.JobTitle,
-			CompanyName:        work.CompanyName,
-			CompanyDescription: work.CompanyDescription,
-			StartDate:          work.StartDate,
-			EndDate:            work.EndDate,
-			CreatedAt:          work.CreatedAt,
-			UpdatedAt:          work.UpdatedAt,
+			ID:          work.ID,
+			Position:    work.Position,
+			Company:     work.Company,
+			Description: work.Description,
+			StartDate:   work.StartDate,
+			EndDate:     work.EndDate,
+			CreatedAt:   work.CreatedAt,
+			UpdatedAt:   work.UpdatedAt,
+		})
+	}
+
+	// Convert educations from models to DTOs
+	educationsResponse := make([]dto.EducationResponse, 0, len(curriculum.Educations))
+	for _, education := range curriculum.Educations {
+		educationsResponse = append(educationsResponse, dto.EducationResponse{
+			ID:          education.ID,
+			Institution: education.Institution,
+			Degree:      education.Degree,
+			StartDate:   education.StartDate,
+			EndDate:     education.EndDate,
+			Description: education.Description,
+			CreatedAt:   education.CreatedAt,
+			UpdatedAt:   education.UpdatedAt,
 		})
 	}
 
 	return &dto.CurriculumResponse{
-		ID:                curriculum.ID,
-		FullName:          curriculum.FullName,
-		Email:             curriculum.Email,
-		Phone:             curriculum.Phone,
-		DriverLicense:     curriculum.DriverLicense,
-		Intro:             curriculum.Intro,
-		Technologies:      curriculum.Technologies,
-		DateDisponibility: curriculum.DateDisponibility,
-		Languages:         curriculum.Languages,
-		LevelEducation:    curriculum.LevelEducation,
-		Courses:           curriculum.Courses,
-		SocialLinks:       curriculum.SocialLinks,
-		JobDescription:    curriculum.JobDescription,
-		Works:             worksResponse,
-		CreatedAt:         curriculum.CreatedAt,
-		UpdatedAt:         curriculum.UpdatedAt,
+		ID:            curriculum.ID,
+		FullName:      curriculum.FullName,
+		Email:         curriculum.Email,
+		Phone:         curriculum.Phone,
+		DriverLicense: curriculum.DriverLicense,
+		Intro:         curriculum.Intro,
+		Skills:        curriculum.Skills,
+		Languages:     curriculum.Languages,
+		Courses:       curriculum.Courses,
+		SocialLinks:   curriculum.SocialLinks,
+		Works:         worksResponse,
+		Educations:    educationsResponse,
+		CreatedAt:     curriculum.CreatedAt,
+		UpdatedAt:     curriculum.UpdatedAt,
 	}, nil
 }
