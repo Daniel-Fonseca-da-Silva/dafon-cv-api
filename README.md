@@ -135,59 +135,59 @@ erDiagram
   CURRICULUMS ||--o{ EDUCATIONS : includes
 
   USERS {
-    uuid ID PK
-    string NAME
-    string EMAIL unique
-    datetime CREATED_AT
-    datetime UPDATED_AT
+    uuid id PK
+    string name
+    string email
+    datetime created_at
+    datetime updated_at
   }
 
   SESSIONS {
-    uuid ID PK
-    uuid USER_ID FK
-    string TOKEN unique
-    datetime EXPIRES_AT index
+    uuid id PK
+    uuid user_id FK
+    string token
+    datetime expires_at
   }
 
   CONFIGURATIONS {
-    uuid ID PK
-    uuid USER_ID unique
-    string LANGUAGE
-    bool NEWSLETTER
-    bool RECEIVE_EMAILS
+    uuid id PK
+    uuid user_id FK
+    string language
+    bool newsletter
+    bool receive_emails
   }
 
   CURRICULUMS {
-    uuid ID PK
-    uuid USER_ID FK
-    string FULL_NAME
-    string EMAIL
-    string PHONE
-    text INTRO
-    text SKILLS
-    text LANGUAGES
-    text COURSES
-    text SOCIAL_LINKS
+    uuid id PK
+    uuid user_id FK
+    string full_name
+    string email
+    string phone
+    string intro
+    string skills
+    string languages
+    string courses
+    string social_links
   }
 
   WORKS {
-    uuid ID PK
-    uuid CURRICULUM_ID FK
-    string POSITION
-    string COMPANY
-    text DESCRIPTION
-    date START_DATE
-    date END_DATE nullable
+    uuid id PK
+    uuid curriculum_id FK
+    string position
+    string company
+    string description
+    date start_date
+    date end_date
   }
 
   EDUCATIONS {
-    uuid ID PK
-    uuid CURRICULUM_ID FK
-    string INSTITUTION
-    string DEGREE
-    date START_DATE
-    date END_DATE nullable
-    text DESCRIPTION
+    uuid id PK
+    uuid curriculum_id FK
+    string institution
+    string degree
+    date start_date
+    date end_date
+    string description
   }
 ```
 
