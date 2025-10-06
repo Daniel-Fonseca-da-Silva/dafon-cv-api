@@ -10,25 +10,26 @@ import (
 	"github.com/google/uuid"
 )
 
-// CurriculumUsecase defines the interface for curriculum business logic operations
+// CurriculumUsecase Define a interface para operações de dados de curriculum
 type CurriculumUseCase interface {
 	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
+	GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error)
 }
 
-// curriculumUsecase implements CurriculumUseCase interface
+// curriculumUsecase Implementa a interface CurriculumUseCase
 type curriculumUseCase struct {
 	curriculumRepo repositories.CurriculumRepository
 }
 
-// NewCurriculumUsecase creates a new instance of CurriculumUsecase
+// NewCurriculumUsecase Cria uma nova instância de CurriculumUsecase
 func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository) CurriculumUseCase {
 	return &curriculumUseCase{
 		curriculumRepo: curriculumRepo,
 	}
 }
 
-// CreateCurriculum creates a new curriculum in the database
+// CreateCurriculum Cria um novo curriculum no banco de dados
 func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error) {
 	// Create curriculum model
 	curriculum := &models.Curriculums{
@@ -44,13 +45,13 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		UserID:        userID,
 	}
 
-	// Validate the curriculum model
+	// Validar o modelo de curriculum
 	validate := validator.New()
 	if err := validate.Struct(curriculum); err != nil {
 		return nil, err
 	}
 
-	// Create works associated with curriculum
+	// Criar works associados ao curriculum
 	for _, workReq := range req.Works {
 		work := models.Work{
 			Position:    workReq.Position,
@@ -62,7 +63,7 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		curriculum.Works = append(curriculum.Works, work)
 	}
 
-	// Create educations associated with curriculum
+	// Criar educations associados ao curriculum
 	for _, educationReq := range req.Educations {
 		education := models.Education{
 			Institution: educationReq.Institution,
@@ -74,12 +75,12 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		curriculum.Educations = append(curriculum.Educations, education)
 	}
 
-	// Save to database (GORM will handle the foreign key relationship)
+	// Salvar no banco de dados (GORM irá lidar com a relação de chave estrangeira)
 	if err := cu.curriculumRepo.Create(ctx, curriculum); err != nil {
 		return nil, err
 	}
 
-	// Prepare works response
+	// Preparar response de works
 	worksResponse := make([]dto.WorkResponse, 0, len(curriculum.Works))
 	for _, work := range curriculum.Works {
 		worksResponse = append(worksResponse, dto.WorkResponse{
@@ -94,7 +95,7 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		})
 	}
 
-	// Prepare educations response
+	// Preparar response de educations
 	educationsResponse := make([]dto.EducationResponse, 0, len(curriculum.Educations))
 	for _, education := range curriculum.Educations {
 		educationsResponse = append(educationsResponse, dto.EducationResponse{
@@ -181,4 +182,73 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		CreatedAt:     curriculum.CreatedAt,
 		UpdatedAt:     curriculum.UpdatedAt,
 	}, nil
+}
+
+// GetAllCurriculums traz todos os curriculums paginados de um usuário específico
+func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error) {
+	// Validar parâmetros de paginação
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10 // Tamanho de página padrão
+	}
+
+	curriculums, err := cu.curriculumRepo.GetAllByUserID(ctx, userID, page, pageSize, sortBy, sortOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	// Converter curriculums para DTOs
+	curriculumsResponse := make([]dto.CurriculumResponse, 0, len(curriculums))
+	for _, curriculum := range curriculums {
+		// Converter works de models para DTOs
+		worksResponse := make([]dto.WorkResponse, 0, len(curriculum.Works))
+		for _, work := range curriculum.Works {
+			worksResponse = append(worksResponse, dto.WorkResponse{
+				ID:          work.ID,
+				Position:    work.Position,
+				Company:     work.Company,
+				Description: work.Description,
+				StartDate:   work.StartDate,
+				EndDate:     work.EndDate,
+				CreatedAt:   work.CreatedAt,
+				UpdatedAt:   work.UpdatedAt,
+			})
+		}
+
+		// Converter educations de models para DTOs
+		educationsResponse := make([]dto.EducationResponse, 0, len(curriculum.Educations))
+		for _, education := range curriculum.Educations {
+			educationsResponse = append(educationsResponse, dto.EducationResponse{
+				ID:          education.ID,
+				Institution: education.Institution,
+				Degree:      education.Degree,
+				StartDate:   education.StartDate,
+				EndDate:     education.EndDate,
+				Description: education.Description,
+				CreatedAt:   education.CreatedAt,
+				UpdatedAt:   education.UpdatedAt,
+			})
+		}
+
+		curriculumsResponse = append(curriculumsResponse, dto.CurriculumResponse{
+			ID:            curriculum.ID,
+			FullName:      curriculum.FullName,
+			Email:         curriculum.Email,
+			Phone:         curriculum.Phone,
+			DriverLicense: curriculum.DriverLicense,
+			Intro:         curriculum.Intro,
+			Skills:        curriculum.Skills,
+			Languages:     curriculum.Languages,
+			Courses:       curriculum.Courses,
+			SocialLinks:   curriculum.SocialLinks,
+			Works:         worksResponse,
+			Educations:    educationsResponse,
+			CreatedAt:     curriculum.CreatedAt,
+			UpdatedAt:     curriculum.UpdatedAt,
+		})
+	}
+
+	return curriculumsResponse, nil
 }

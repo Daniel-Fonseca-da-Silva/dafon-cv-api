@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
@@ -72,7 +73,7 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 
 // GetCurriculumByID handles GET /curriculums/:id request
 func (h *CurriculumHandler) GetCurriculumByID(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Param("user_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
@@ -86,4 +87,65 @@ func (h *CurriculumHandler) GetCurriculumByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, curriculum)
+}
+
+// GetAllCurriculums traz todos os curriculums paginados de um usuário específico
+func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
+	// Extrair user_id dos parâmetros da URL
+	userIDStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
+		return
+	}
+
+	// Verificar se o usuário existe
+	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("user not found"))
+		return
+	}
+
+	// Obter parâmetros de query com valores padrão
+	pageStr := c.DefaultQuery("page", "1")
+	pageSizeStr := c.DefaultQuery("page_size", "10")
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortOrder := c.DefaultQuery("sort_order", "DESC")
+
+	// Converter page para int
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		utils.HandleValidationError(c, errors.New("invalid page format, must be a positive integer"))
+		return
+	}
+
+	// Converter pageSize para int
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 {
+		utils.HandleValidationError(c, errors.New("invalid page_size format, must be a positive integer"))
+		return
+	}
+
+	// Validar sortOrder
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		utils.HandleValidationError(c, errors.New("invalid sort_order format, must be ASC or DESC"))
+		return
+	}
+
+	// Chamar o usecase passando o userID
+	curriculums, err := h.curriculumUseCase.GetAllCurriculums(c.Request.Context(), userID, page, pageSize, sortBy, sortOrder)
+	if err != nil {
+		utils.HandleValidationError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": curriculums,
+		"pagination": gin.H{
+			"page":       page,
+			"page_size":  pageSize,
+			"sort_by":    sortBy,
+			"sort_order": sortOrder,
+		},
+	})
 }

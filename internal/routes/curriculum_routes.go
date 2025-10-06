@@ -29,6 +29,7 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, 
 
 	{
 		curriculums.POST("", curriculumHandler.CreateCurriculum)
-		curriculums.GET("/:id", curriculumHandler.GetCurriculumByID)
+		curriculums.GET("/get-all-by-user/:user_id", curriculumHandler.GetAllCurriculums)
+		curriculums.GET("/:user_id", curriculumHandler.GetCurriculumByID)
 	}
 }
