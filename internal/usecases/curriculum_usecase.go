@@ -15,6 +15,7 @@ type CurriculumUseCase interface {
 	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
 	GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error)
+	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
 // curriculumUsecase Implementa a interface CurriculumUseCase
@@ -251,4 +252,9 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 	}
 
 	return curriculumsResponse, nil
+}
+
+// DeleteCurriculum Deleta um curriculum por ID
+func (cu *curriculumUseCase) DeleteCurriculum(ctx context.Context, id uuid.UUID) error {
+	return cu.curriculumRepo.DeleteCurriculum(ctx, id)
 }

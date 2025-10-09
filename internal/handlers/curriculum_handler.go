@@ -149,3 +149,20 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 		},
 	})
 }
+
+// DeleteCurriculum Deleta um curriculum por ID
+func (h *CurriculumHandler) DeleteCurriculum(c *gin.Context) {
+	idStr := c.Param("user_id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
+		return
+	}
+
+	if err := h.curriculumUseCase.DeleteCurriculum(c.Request.Context(), id); err != nil {
+		utils.HandleValidationError(c, errors.New("failed to delete curriculum"))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Curriculum deleted successfully"})
+}
