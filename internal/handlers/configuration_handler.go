@@ -41,7 +41,7 @@ func (h *ConfigurationHandler) GetConfigurationByUserID(c *gin.Context) {
 
 // UpdateConfiguration handles PATCH /configuration/:id request
 func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Param("user_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("invalid configuration ID format"))
@@ -65,7 +65,7 @@ func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
 
 // DeleteConfiguration handles DELETE /configuration/:id request
 func (h *ConfigurationHandler) DeleteConfiguration(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Param("user_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("invalid configuration ID format"))
