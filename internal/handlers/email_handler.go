@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -28,7 +28,7 @@ func NewEmailHandler(emailUseCase usecases.EmailUseCase, logger *zap.Logger) *Em
 func (h *EmailHandler) SendEmail(c *gin.Context) {
 	var req dto.SendEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		response.HandleValidationError(c, err)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (h *EmailHandler) SendEmail(c *gin.Context) {
 			zap.String("email", req.Email),
 			zap.Error(err),
 		)
-		utils.HandleValidationError(c, err)
+		response.HandleValidationError(c, err)
 		return
 	}
 

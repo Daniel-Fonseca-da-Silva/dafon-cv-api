@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,15 +25,15 @@ func NewGenerateSkillAIHandler(generateSkillAIUseCase usecases.GenerateSkillAIUs
 func (h *GenerateSkillAIHandler) FilterContent(c *gin.Context) {
 	var req dto.GenerateSkillAIRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		response.HandleValidationError(c, err)
 		return
 	}
 
-	response, err := h.generateSkillAIUseCase.FilterContent(c.Request.Context(), &req)
+	aiResponse, err := h.generateSkillAIUseCase.FilterContent(c.Request.Context(), &req)
 	if err != nil {
-		utils.HandleValidationError(c, err)
+		response.HandleValidationError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, aiResponse)
 }
