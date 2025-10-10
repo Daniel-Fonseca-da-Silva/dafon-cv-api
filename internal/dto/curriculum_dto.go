@@ -39,3 +39,8 @@ type CurriculumResponse struct {
 	CreatedAt     time.Time           `json:"created_at"`
 	UpdatedAt     time.Time           `json:"updated_at"`
 }
+
+// CurriculumBodyResponse represents the response structure for curriculum body in text format
+type CurriculumBodyResponse struct {
+	Body string `json:"content"`
+}

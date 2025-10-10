@@ -42,5 +42,8 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup authentication email routes
 	SetupEmailRoutes(router, logger, cfg)
 
+	// Setup generate analyze AI routes
+	SetupGenerateAnalyzeAIRoutes(router, logger, cfg)
+
 	return nil
 }

@@ -14,6 +14,7 @@ type CurriculumRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error)
 	GetAll(ctx context.Context, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error)
 	GetAllByUserID(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*models.Curriculums, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
@@ -121,6 +122,13 @@ func (cu *curriculumRepository) GetAllByUserID(ctx context.Context, userID uuid.
 		Find(&curriculums).Error
 
 	return curriculums, err
+}
+
+// GetByUserID Recupera um curriculum por user_id
+func (cu *curriculumRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*models.Curriculums, error) {
+	var curriculum models.Curriculums
+	err := cu.db.WithContext(ctx).Preload("Works").Preload("Educations").Where("user_id = ?", userID).First(&curriculum).Error
+	return &curriculum, err
 }
 
 // DeleteCurriculum Deleta um curriculum por ID

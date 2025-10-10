@@ -15,6 +15,7 @@ type CurriculumUseCase interface {
 	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
 	GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error)
+	GetCurriculumBody(ctx context.Context, userID uuid.UUID) (*dto.CurriculumBodyResponse, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
@@ -252,6 +253,96 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 	}
 
 	return curriculumsResponse, nil
+}
+
+// GetCurriculumBody retrieves a curriculum body in text format by user ID
+func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, userID uuid.UUID) (*dto.CurriculumBodyResponse, error) {
+	curriculum, err := cu.curriculumRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build curriculum body in text format
+	body := buildCurriculumBodyText(curriculum)
+
+	return &dto.CurriculumBodyResponse{
+		Body: body,
+	}, nil
+}
+
+// buildCurriculumBodyText builds the curriculum body in plain text format
+func buildCurriculumBodyText(curriculum *models.Curriculums) string {
+	var body string
+
+	// Personal Information
+	body += "Personal Information "
+	body += "Name: " + curriculum.FullName + " "
+	body += "Email: " + curriculum.Email + " "
+	body += "Phone: " + curriculum.Phone + " "
+	body += "Driver License: " + curriculum.DriverLicense + " "
+
+	// Introduction
+	if curriculum.Intro != "" {
+		body += "Presentation " + curriculum.Intro + " "
+	}
+
+	// Skills
+	if curriculum.Skills != "" {
+		body += "Skills " + curriculum.Skills + " "
+	}
+
+	// Languages
+	if curriculum.Languages != "" {
+		body += "Languages " + curriculum.Languages + " "
+	}
+
+	// Courses
+	if curriculum.Courses != "" {
+		body += "Courses " + curriculum.Courses + " "
+	}
+
+	// Social Links
+	if curriculum.SocialLinks != "" {
+		body += "Social Links " + curriculum.SocialLinks + " "
+	}
+
+	// Work Experience
+	if len(curriculum.Works) > 0 {
+		body += "Work Experience "
+		for _, work := range curriculum.Works {
+			body += "Position: " + work.Position + " "
+			body += "Company: " + work.Company + " "
+			startDate := work.StartDate.Format("01/02/2006")
+			endDate := "Current"
+			if work.EndDate != nil {
+				endDate = work.EndDate.Format("01/02/2006")
+			}
+			body += "Period: " + startDate + " - " + endDate + " "
+			if work.Description != "" {
+				body += "Description: " + work.Description + " "
+			}
+		}
+	}
+
+	// Education
+	if len(curriculum.Educations) > 0 {
+		body += "Academic Formation "
+		for _, education := range curriculum.Educations {
+			body += "Degree: " + education.Degree + " "
+			body += "Institution: " + education.Institution + " "
+			startDate := education.StartDate.Format("01/02/2006")
+			endDate := "Current"
+			if education.EndDate != nil {
+				endDate = education.EndDate.Format("01/02/2006")
+			}
+			body += "Period: " + startDate + " - " + endDate + " "
+			if education.Description != "" {
+				body += "Description: " + education.Description + " "
+			}
+		}
+	}
+
+	return body
 }
 
 // DeleteCurriculum Deleta um curriculum por ID

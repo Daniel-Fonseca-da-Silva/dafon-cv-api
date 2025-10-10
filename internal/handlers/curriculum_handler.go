@@ -73,7 +73,7 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 
 // GetCurriculumByID handles GET /curriculums/:id request
 func (h *CurriculumHandler) GetCurriculumByID(c *gin.Context) {
-	idStr := c.Param("user_id")
+	idStr := c.Param("curriculum_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
@@ -150,9 +150,34 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 	})
 }
 
+// GetCurriculumBody handles GET /curriculums/get-body/:user_id request
+func (h *CurriculumHandler) GetCurriculumBody(c *gin.Context) {
+	userIDStr := c.Param("curriculum_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("invalid user ID format"))
+		return
+	}
+
+	// Verify if the user exists in the database
+	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("user not found"))
+		return
+	}
+
+	curriculumBody, err := h.curriculumUseCase.GetCurriculumBody(c.Request.Context(), userID)
+	if err != nil {
+		utils.HandleValidationError(c, errors.New("curriculum not found"))
+		return
+	}
+
+	c.JSON(http.StatusOK, curriculumBody)
+}
+
 // DeleteCurriculum Deleta um curriculum por ID
 func (h *CurriculumHandler) DeleteCurriculum(c *gin.Context) {
-	idStr := c.Param("user_id")
+	idStr := c.Param("curriculum_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
