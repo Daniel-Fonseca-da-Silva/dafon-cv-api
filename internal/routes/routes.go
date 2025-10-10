@@ -45,5 +45,8 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup generate analyze AI routes
 	SetupGenerateAnalyzeAIRoutes(router, logger, cfg)
 
+	// Setup generate translation AI routes
+	SetupGenerateTranslationAIRoutes(router, logger, cfg)
+
 	return nil
 }
