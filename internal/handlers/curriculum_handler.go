@@ -150,23 +150,16 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 	})
 }
 
-// GetCurriculumBody handles GET /curriculums/get-body/:user_id request
+// GetCurriculumBody handles GET /curriculums/get-body/:curriculum_id request
 func (h *CurriculumHandler) GetCurriculumBody(c *gin.Context) {
-	userIDStr := c.Param("curriculum_id")
-	userID, err := uuid.Parse(userIDStr)
+	curriculumIDStr := c.Param("curriculum_id")
+	curriculumID, err := uuid.Parse(curriculumIDStr)
 	if err != nil {
-		utils.HandleValidationError(c, errors.New("invalid user ID format"))
+		utils.HandleValidationError(c, errors.New("invalid curriculum ID format"))
 		return
 	}
 
-	// Verify if the user exists in the database
-	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
-	if err != nil {
-		utils.HandleValidationError(c, errors.New("user not found"))
-		return
-	}
-
-	curriculumBody, err := h.curriculumUseCase.GetCurriculumBody(c.Request.Context(), userID)
+	curriculumBody, err := h.curriculumUseCase.GetCurriculumBody(c.Request.Context(), curriculumID)
 	if err != nil {
 		utils.HandleValidationError(c, errors.New("curriculum not found"))
 		return

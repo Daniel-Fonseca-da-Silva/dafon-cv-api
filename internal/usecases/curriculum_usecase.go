@@ -15,7 +15,7 @@ type CurriculumUseCase interface {
 	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
 	GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error)
-	GetCurriculumBody(ctx context.Context, userID uuid.UUID) (*dto.CurriculumBodyResponse, error)
+	GetCurriculumBody(ctx context.Context, curriculumID uuid.UUID) (*dto.CurriculumBodyResponse, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
@@ -255,9 +255,9 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 	return curriculumsResponse, nil
 }
 
-// GetCurriculumBody retrieves a curriculum body in text format by user ID
-func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, userID uuid.UUID) (*dto.CurriculumBodyResponse, error) {
-	curriculum, err := cu.curriculumRepo.GetByUserID(ctx, userID)
+// GetCurriculumBody retrieves a curriculum body in text format by curriculum ID
+func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, curriculumID uuid.UUID) (*dto.CurriculumBodyResponse, error) {
+	curriculum, err := cu.curriculumRepo.GetByID(ctx, curriculumID)
 	if err != nil {
 		return nil, err
 	}
