@@ -4,6 +4,8 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/ratelimit"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,10 +20,12 @@ func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *con
 	}
 
 	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase)
+	// Criar rate limiter mais estrito para AI routes
+	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
 	generateSkill := router.Group("/api/v1/generate-skill-ai")
 	generateSkill.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-
+	generateSkill.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
 	{
 		generateSkill.POST("", generateSkillAIHandler.FilterContent)
 	}
