@@ -52,6 +52,7 @@ curl http://localhost:8080/health
 - ✅ **User & Configuration Management** - Comprehensive user profiles and settings
 - ✅ **Email Integration** - Resend-powered email functionality
 - ✅ **Robust Data Validation** - Advanced validation for emails, phones, and data integrity
+- ✅ **Rate Limiting System** - Redis-based rate limiting with configurable limits
 - ✅ **Clean Architecture** - SOLID principles with clear separation of concerns
 - ✅ **Production-Ready** - Docker containerization with health checks and monitoring
 
@@ -78,6 +79,8 @@ The project follows **Clean Architecture** principles with clear separation of c
 │   │   └── user_handler.go
 │   ├── middleware/             # Middlewares (Static Token Auth, CORS)
 │   ├── models/                 # Domain entities (GORM models)
+│   ├── ratelimit/             # Rate limiting system (Redis-based)
+│   ├── redis/                 # Redis connection and configuration
 │   ├── repositories/           # Data access layer (interfaces + implementations)
 │   ├── routes/                 # Route definitions and setup
 │   │   ├── configuration_routes.go
@@ -110,11 +113,13 @@ flowchart LR
     G[(MySQL 8.0)]
     H[OpenAI API]
     I[Resend Email]
+    J[(Redis Cache)]
   end
 
   A -->|HTTP/JSON| B --> C --> D --> E --> F --> G
   E --> H
   E --> I
+  C --> J
 ```
 
 ---
@@ -144,12 +149,34 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  A[Request: POST /ai/generate-intro] --> B[Validate payload]
-  B --> C[Build prompt]
-  C --> D[OpenAI Completion]
-  D -->|Success| E[Sanitize and shape response]
-  D -->|Error| F[Return error with context]
-  E --> G[200 OK: filtered content]
+  A[Request: POST /ai/generate-intro] --> B[Rate Limiting Check]
+  B -->|Allowed| C[Validate payload]
+  B -->|Rate Limited| D[429 Too Many Requests]
+  C --> E[Build prompt]
+  E --> F[OpenAI Completion]
+  F -->|Success| G[Sanitize and shape response]
+  F -->|Error| H[Return error with context]
+  G --> I[200 OK: filtered content]
+```
+
+### Rate Limiting - Flow
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant API as dafon-cv-api
+  participant R as Redis
+
+  C->>API: HTTP Request
+  API->>R: Check rate limit (IP-based)
+  alt Rate limit OK
+    R-->>API: Allow request
+    API->>API: Process request
+    API-->>C: 200 OK + Response
+  else Rate limit exceeded
+    R-->>API: Block request
+    API-->>C: 429 Too Many Requests
+  end
 ```
 
 ---
@@ -311,6 +338,18 @@ MYSQL_DATABASE=dafon_cv
 MYSQL_USER=your_mysql_user
 MYSQL_PASSWORD=your_mysql_password
 
+# Redis Configuration
+REDIS_HOST=
+REDIS_PORT=
+REDIS_PASSWORD=
+REDIS_DB=
+
+# Rate Limiting Configuration
+RATE_LIMIT=
+RATE_WINDOW_MINUTES=
+AI_RATE_LIMIT=
+AI_RATE_WINDOW_MINUTES=
+
 # Application Configuration
 BACKEND_APIKEY=your_static_token_here
 APP_URL=http://localhost:3000
@@ -320,11 +359,14 @@ APP_URL=http://localhost:3000
 
 ```bash
 # Server Configuration
-PORT=8080
+PORT=
 GIN_MODE=release
 
 # Database Host (for Docker)
-DB_HOST=mysql
+DB_HOST=
+
+# Redis Host (for Docker)
+REDIS_HOST=
 ```
 
 > **Security Note:** Never commit `.env` files. They are automatically ignored via `.gitignore`.
@@ -339,7 +381,8 @@ DB_HOST=mysql
 - **Input Validation** - Comprehensive validation for emails, phones, and data integrity
 - **Container Security** - Distroless non-root base image for minimal attack surface
 - **Environment Security** - Never commit secrets; use environment variables
-- **Rate Limiting** - Implement at API gateway or reverse proxy level
+- **Rate Limiting** - Redis-based rate limiting with configurable limits per endpoint
+- **IP-based Protection** - Rate limiting by client IP with intelligent detection
 - **Secret Rotation** - Regularly rotate API keys and tokens
 - **Database Security** - Use SSL connections in production (`DB_SSL_MODE=require`)
 
@@ -364,8 +407,9 @@ DB_HOST=mysql
 ### docker-compose
 
 - MySQL 8.0 + persistent volume
-- API service depends on DB health, exposes `8080`
-- Health checks configured para ambos serviços
+- Redis 7 Alpine + persistent volume
+- API service depends on DB and Redis health, exposes `8080`
+- Health checks configured for all services
 
 Run:
 
@@ -405,15 +449,18 @@ flowchart LR
 - **Distroless Container** - Minimal attack surface and fast startup
 - **Structured Logging** - Zap logger for performance monitoring
 - **Health Checks** - Container and application health monitoring
+- **Rate Limiting** - Redis-based rate limiting with configurable limits
+- **Caching Layer** - Redis for rate limiting and future caching needs
 
 ### Recommended Enhancements
 
-- **Caching Layer** - Redis for AI responses and frequent data
+- **Advanced Caching** - Cache AI responses and frequent data in Redis
 - **Pagination** - Implement pagination for list endpoints
 - **Async Processing** - Queue system for heavy AI requests
 - **Database Indexing** - Optimize queries with proper indexes
 - **Load Balancing** - Multiple API instances behind load balancer
 - **CDN Integration** - Static assets and API responses caching
+- **Rate Limit Analytics** - Monitor and analyze rate limiting patterns
 
 ---
 
@@ -431,6 +478,7 @@ docker compose ps
 # Application logs
 docker compose logs -f api
 docker compose logs -f mysql
+docker compose logs -f redis
 ```
 
 ### Common Issues & Solutions
@@ -439,21 +487,82 @@ docker compose logs -f mysql
 |-------|----------|----------|
 | **401 Unauthorized** | Missing/invalid static token | Check `BACKEND_APIKEY` in `.env` |
 | **400 Validation Error** | Invalid request data | Verify DTO constraints (email, phone, UUID) |
+| **429 Too Many Requests** | Rate limit exceeded | Check rate limiting configuration |
 | **OpenAI Errors** | AI generation fails | Check `OPENAI_API_KEY` and quota |
 | **Database Connection** | Connection refused | Verify `DB_HOST`, `DB_PORT`, credentials |
+| **Redis Connection** | Redis connection failed | Verify `REDIS_HOST`, `REDIS_PORT` |
 | **Email Service** | Email sending fails | Check `RESEND_API_KEY` and `MAIL_FROM` |
 
 ### Debug Commands
 
 ```bash
 # Check environment variables
-docker compose exec api env | grep -E "(DB_|OPENAI_|RESEND_)"
+docker compose exec api env | grep -E "(DB_|REDIS_|RATE_|OPENAI_|RESEND_)"
 
 # Test database connection
 docker compose exec mysql mysql -u root -p -e "SHOW DATABASES;"
 
+# Test Redis connection
+docker compose exec redis redis-cli ping
+
 # View application configuration
 docker compose exec api cat /app/.env
+
+# Check rate limiting status
+docker compose exec redis redis-cli keys "*rate*"
+```
+
+---
+
+## 🚦 Rate Limiting System
+
+The application implements a comprehensive rate limiting system using Redis to protect against abuse and ensure fair usage.
+
+### Rate Limiting Configuration
+
+- **Global Rate Limiting**: Applied to all routes except `/health`
+  - Default: 100 requests per minute per IP
+  - Configurable via `RATE_LIMIT` and `RATE_WINDOW_MINUTES`
+
+- **AI Endpoints Rate Limiting**: Stricter limits for AI-powered endpoints
+  - Default: 10 requests per minute per IP
+  - Configurable via `AI_RATE_LIMIT` and `AI_RATE_WINDOW_MINUTES`
+
+### Rate Limiting Features
+
+- **IP-based Detection**: Intelligent IP detection supporting load balancers and proxies
+- **Redis Backend**: High-performance rate limiting using Redis
+- **Configurable Limits**: Environment-based configuration for different environments
+- **Graceful Responses**: JSON error responses with clear messaging
+- **Logging**: Comprehensive logging for monitoring and debugging
+
+### Rate Limiting Response
+
+When rate limits are exceeded, the API returns:
+
+```json
+{
+    "error": "Too Many Requests",
+    "message": "Rate limit exceeded. Please try again later."
+}
+```
+
+**HTTP Status**: `429 Too Many Requests`
+
+### Configuration Examples
+
+```bash
+# Development (more permissive)
+RATE_LIMIT=1000
+AI_RATE_LIMIT=50
+
+# Production (conservative)
+RATE_LIMIT=100
+AI_RATE_LIMIT=10
+
+# High-traffic (balanced)
+RATE_LIMIT=500
+AI_RATE_LIMIT=25
 ```
 
 ---
