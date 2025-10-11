@@ -22,8 +22,8 @@ func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logge
 	configuration.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
 
 	{
-		configuration.GET("/user/:user_id", configurationHandler.GetConfigurationByUserID)
-		configuration.PATCH("/:id", configurationHandler.UpdateConfiguration)
-		configuration.DELETE("/:id", configurationHandler.DeleteConfiguration)
+		configuration.GET("/:user_id", configurationHandler.GetConfigurationByUserID)
+		configuration.PATCH("/:user_id", configurationHandler.UpdateConfiguration)
+		configuration.DELETE("/:user_id", configurationHandler.DeleteConfiguration)
 	}
 }

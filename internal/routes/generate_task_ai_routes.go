@@ -4,6 +4,8 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/ratelimit"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,10 +20,12 @@ func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *conf
 	}
 
 	generateTaskAIHandler := handlers.NewGenerateTaskAIHandler(generateTaskAIUseCase)
+	// Criar rate limiter mais estrito para AI routes
+	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
 	generateTasks := router.Group("/api/v1/generate-task-ai")
 	generateTasks.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-
+	generateTasks.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
 	{
 		generateTasks.POST("", generateTaskAIHandler.FilterContent)
 	}

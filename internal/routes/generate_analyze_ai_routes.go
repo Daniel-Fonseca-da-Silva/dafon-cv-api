@@ -12,23 +12,21 @@ import (
 )
 
 // SetupGenerateIntroAIRoutes configures AI filtering-related routes
-func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateIntroAIUseCase, err := usecases.NewGenerateIntroAIUseCase()
+func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
+	generateAnalyzeAIUseCase, err := usecases.NewGenerateAnalyzeAIUseCase()
 	if err != nil {
-		logger.Error("Failed to create Generate Intro AI usecase", zap.Error(err))
+		logger.Error("Failed to create Generate Analyze AI usecase", zap.Error(err))
 		return
 	}
 
-	generateIntroAIHandler := handlers.NewGenerateIntroAIHandler(generateIntroAIUseCase)
-
-	// Create stricter rate limiter for AI routes
+	generateAnalyzeAIHandler := handlers.NewGenerateAnalyzeAIHandler(generateAnalyzeAIUseCase)
+	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateIntros := router.Group("/api/v1/generate-intro-ai")
-	generateIntros.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateIntros.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
-
+	generateAnalyze := router.Group("/api/v1/generate-analyze-ai")
+	generateAnalyze.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+	generateAnalyze.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
 	{
-		generateIntros.POST("", generateIntroAIHandler.FilterContent)
+		generateAnalyze.POST("", generateAnalyzeAIHandler.FilterContent)
 	}
 }
