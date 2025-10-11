@@ -6,6 +6,7 @@ import (
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/database"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,12 @@ func main() {
 	if err := database.AutoMigrate(logger); err != nil {
 		logger.Fatal("Failed to run database migrations", zap.Error(err))
 	}
+
+	// Connect to Redis
+	if err := redis.Connect(logger); err != nil {
+		logger.Fatal("Failed to connect to Redis", zap.Error(err))
+	}
+	defer redis.Close()
 
 	// Set Gin mode
 	gin.SetMode(cfg.Mode)
