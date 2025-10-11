@@ -12,6 +12,7 @@ type Config struct {
 	Port       string
 	Mode       string
 	DB         DatabaseConfig
+	Redis      RedisConfig
 	WorkerPool WorkerPoolConfig
 	Email      EmailConfig
 	App        AppConfig
@@ -25,6 +26,18 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	SSLMode  string
+}
+
+// RedisConfig holds Redis configuration
+type RedisConfig struct {
+	Host              string
+	Port              string
+	Password          string
+	DB                string
+	MaxMemory         string
+	MaxMemoryPolicy   string
+	MemoryLimit       string
+	MemoryReservation string
 }
 
 // WorkerPoolConfig holds worker pool configuration
@@ -74,6 +87,16 @@ func LoadConfig() *Config {
 			Password: os.Getenv("DB_PASSWORD"),
 			Name:     os.Getenv("DB_NAME"),
 			SSLMode:  os.Getenv("DB_SSL_MODE"),
+		},
+		Redis: RedisConfig{
+			Host:              os.Getenv("REDIS_HOST"),
+			Port:              os.Getenv("REDIS_PORT"),
+			Password:          os.Getenv("REDIS_PASSWORD"),
+			DB:                os.Getenv("REDIS_DB"),
+			MaxMemory:         os.Getenv("REDIS_MAX_MEMORY"),
+			MaxMemoryPolicy:   os.Getenv("REDIS_MAX_MEMORY_POLICY"),
+			MemoryLimit:       os.Getenv("REDIS_MEMORY_LIMIT"),
+			MemoryReservation: os.Getenv("REDIS_MEMORY_RESERVATION"),
 		},
 		Email: EmailConfig{
 			APIKey: emailAPIKey,
