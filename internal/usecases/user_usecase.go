@@ -113,7 +113,7 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 	}
 
 	// Armazena os dados em cache por 15 minutos
-	ttl := 1 * time.Minute
+	ttl := 15 * time.Minute
 	if err := uc.cacheService.Set(ctx, cacheKey, userResponse, ttl); err != nil {
 		uc.logger.Warn("Failed to cache user data",
 			zap.Error(err),

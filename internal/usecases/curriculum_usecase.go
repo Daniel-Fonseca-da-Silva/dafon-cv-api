@@ -2,12 +2,15 @@ package usecases
 
 import (
 	"context"
+	"time"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // CurriculumUsecase Define a interface para operações de dados de curriculum
@@ -22,12 +25,16 @@ type CurriculumUseCase interface {
 // curriculumUsecase Implementa a interface CurriculumUseCase
 type curriculumUseCase struct {
 	curriculumRepo repositories.CurriculumRepository
+	cacheService   *cache.CacheService
+	logger         *zap.Logger
 }
 
 // NewCurriculumUsecase Cria uma nova instância de CurriculumUsecase
-func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository) CurriculumUseCase {
+func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository, cacheService *cache.CacheService, logger *zap.Logger) CurriculumUseCase {
 	return &curriculumUseCase{
 		curriculumRepo: curriculumRepo,
+		cacheService:   cacheService,
+		logger:         logger,
 	}
 }
 
@@ -133,6 +140,21 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 
 // GetCurriculumByID retrieves a curriculum by ID
 func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error) {
+	cacheKey := cache.GenerateCurriculumCacheKey(id.String())
+
+	// Try to get from cache first
+	var curriculumResponse dto.CurriculumResponse
+	found, err := cu.cacheService.Get(ctx, cacheKey, &curriculumResponse)
+	if err != nil {
+		cu.logger.Warn("Failed to get curriculum from cache, falling back to database",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()))
+	} else if found {
+		cu.logger.Debug("Curriculum retrieved from cache", zap.String("curriculum_id", id.String()))
+		return &curriculumResponse, nil
+	}
+
+	// Cache miss - get from database
 	curriculum, err := cu.curriculumRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -168,7 +190,8 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		})
 	}
 
-	return &dto.CurriculumResponse{
+	// Create response
+	curriculumResponse = dto.CurriculumResponse{
 		ID:            curriculum.ID,
 		FullName:      curriculum.FullName,
 		Email:         curriculum.Email,
@@ -183,7 +206,22 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		Educations:    educationsResponse,
 		CreatedAt:     curriculum.CreatedAt,
 		UpdatedAt:     curriculum.UpdatedAt,
-	}, nil
+	}
+
+	// Armazena os dados em cache por 15 minuto
+	ttl := 30 * time.Minute
+	if err := cu.cacheService.Set(ctx, cacheKey, curriculumResponse, ttl); err != nil {
+		cu.logger.Warn("Failed to cache curriculum data",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()),
+			zap.Duration("ttl", ttl))
+	} else {
+		cu.logger.Debug("Curriculum cached successfully",
+			zap.String("curriculum_id", id.String()),
+			zap.Duration("ttl", ttl))
+	}
+
+	return &curriculumResponse, nil
 }
 
 // GetAllCurriculums traz todos os curriculums paginados de um usuário específico
@@ -347,5 +385,20 @@ func buildCurriculumBodyText(curriculum *models.Curriculums) string {
 
 // DeleteCurriculum Deleta um curriculum por ID
 func (cu *curriculumUseCase) DeleteCurriculum(ctx context.Context, id uuid.UUID) error {
-	return cu.curriculumRepo.DeleteCurriculum(ctx, id)
+	// Delete curriculum from database
+	if err := cu.curriculumRepo.DeleteCurriculum(ctx, id); err != nil {
+		return err
+	}
+
+	// Invalidate cache for this curriculum
+	cacheKey := cache.GenerateCurriculumCacheKey(id.String())
+	if err := cu.cacheService.Delete(ctx, cacheKey); err != nil {
+		cu.logger.Warn("Failed to invalidate curriculum cache after deletion",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()))
+	} else {
+		cu.logger.Debug("Curriculum cache invalidated after deletion", zap.String("curriculum_id", id.String()))
+	}
+
+	return nil
 }

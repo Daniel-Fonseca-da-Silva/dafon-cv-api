@@ -103,3 +103,8 @@ func (cs *CacheService) DeletePattern(ctx context.Context, pattern string) error
 func GenerateUserCacheKey(userID string) string {
 	return fmt.Sprintf("user:%s", userID)
 }
+
+// GenerateCurriculumCacheKey generates cache key for curriculum
+func GenerateCurriculumCacheKey(curriculumID string) string {
+	return fmt.Sprintf("curriculum:%s", curriculumID)
+}
