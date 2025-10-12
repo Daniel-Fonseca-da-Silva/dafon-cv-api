@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Connect to Redis
-	if err := redis.Connect(logger); err != nil {
+	if err := redis.Connect(cfg, logger); err != nil {
 		logger.Fatal("Failed to connect to Redis", zap.Error(err))
 	}
 	defer redis.Close()

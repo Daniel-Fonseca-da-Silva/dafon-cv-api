@@ -19,7 +19,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	router.Use(ratelimit.RateLimiterMiddleware(rateLimiter))
 
 	// Health check handler
-	healthHandler := handlers.NewHealthCheckHandler()
+	healthHandler := handlers.NewHealthCheckHandler(logger)
 
 	// Health check endpoint (no rate limiting)
 	router.GET("/health", healthHandler.HealthCheck)
