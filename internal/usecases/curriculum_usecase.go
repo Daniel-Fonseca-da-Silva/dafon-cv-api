@@ -295,6 +295,21 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 
 // GetCurriculumBody retrieves a curriculum body in text format by curriculum ID
 func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, curriculumID uuid.UUID) (*dto.CurriculumBodyResponse, error) {
+	cacheKey := cache.GenerateCurriculumBodyCacheKey(curriculumID.String())
+
+	// Try to get from cache first
+	var curriculumBodyResponse dto.CurriculumBodyResponse
+	found, err := cu.cacheService.Get(ctx, cacheKey, &curriculumBodyResponse)
+	if err != nil {
+		cu.logger.Warn("Failed to get curriculum body from cache, falling back to database",
+			zap.Error(err),
+			zap.String("curriculum_id", curriculumID.String()))
+	} else if found {
+		cu.logger.Debug("Curriculum body retrieved from cache", zap.String("curriculum_id", curriculumID.String()))
+		return &curriculumBodyResponse, nil
+	}
+
+	// Cache miss - get from database
 	curriculum, err := cu.curriculumRepo.GetByID(ctx, curriculumID)
 	if err != nil {
 		return nil, err
@@ -303,9 +318,26 @@ func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, curriculumID
 	// Build curriculum body in text format
 	body := buildCurriculumBodyText(curriculum)
 
-	return &dto.CurriculumBodyResponse{
+	// Create response
+	curriculumBodyResponse = dto.CurriculumBodyResponse{
 		Body: body,
-	}, nil
+	}
+
+	// Store in cache with TTL of 30 minutes
+	// Armazena os dados em cache por 30 minutos
+	ttl := 30 * time.Minute
+	if err := cu.cacheService.Set(ctx, cacheKey, curriculumBodyResponse, ttl); err != nil {
+		cu.logger.Warn("Failed to cache curriculum body data",
+			zap.Error(err),
+			zap.String("curriculum_id", curriculumID.String()),
+			zap.Duration("ttl", ttl))
+	} else {
+		cu.logger.Debug("Curriculum body cached successfully",
+			zap.String("curriculum_id", curriculumID.String()),
+			zap.Duration("ttl", ttl))
+	}
+
+	return &curriculumBodyResponse, nil
 }
 
 // buildCurriculumBodyText builds the curriculum body in plain text format
@@ -391,13 +423,25 @@ func (cu *curriculumUseCase) DeleteCurriculum(ctx context.Context, id uuid.UUID)
 	}
 
 	// Invalidate cache for this curriculum
-	cacheKey := cache.GenerateCurriculumCacheKey(id.String())
-	if err := cu.cacheService.Delete(ctx, cacheKey); err != nil {
+	curriculumCacheKey := cache.GenerateCurriculumCacheKey(id.String())
+	curriculumBodyCacheKey := cache.GenerateCurriculumBodyCacheKey(id.String())
+
+	// Delete curriculum cache
+	if err := cu.cacheService.Delete(ctx, curriculumCacheKey); err != nil {
 		cu.logger.Warn("Failed to invalidate curriculum cache after deletion",
 			zap.Error(err),
 			zap.String("curriculum_id", id.String()))
 	} else {
 		cu.logger.Debug("Curriculum cache invalidated after deletion", zap.String("curriculum_id", id.String()))
+	}
+
+	// Delete curriculum body cache
+	if err := cu.cacheService.Delete(ctx, curriculumBodyCacheKey); err != nil {
+		cu.logger.Warn("Failed to invalidate curriculum body cache after deletion",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()))
+	} else {
+		cu.logger.Debug("Curriculum body cache invalidated after deletion", zap.String("curriculum_id", id.String()))
 	}
 
 	return nil
