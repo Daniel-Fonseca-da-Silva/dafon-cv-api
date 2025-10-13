@@ -113,3 +113,8 @@ func GenerateCurriculumCacheKey(curriculumID string) string {
 func GenerateCurriculumBodyCacheKey(curriculumID string) string {
 	return fmt.Sprintf("curriculum:body:%s", curriculumID)
 }
+
+// GenerateConfigurationCacheKey generates cache key for configuration
+func GenerateConfigurationCacheKey(userID string) string {
+	return fmt.Sprintf("config:user:%s", userID)
+}

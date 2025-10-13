@@ -208,7 +208,7 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		UpdatedAt:     curriculum.UpdatedAt,
 	}
 
-	// Armazena os dados em cache por 15 minuto
+	// Armazena os dados em cache por 30 minutos
 	ttl := 30 * time.Minute
 	if err := cu.cacheService.Set(ctx, cacheKey, curriculumResponse, ttl); err != nil {
 		cu.logger.Warn("Failed to cache curriculum data",
@@ -323,7 +323,6 @@ func (cu *curriculumUseCase) GetCurriculumBody(ctx context.Context, curriculumID
 		Body: body,
 	}
 
-	// Store in cache with TTL of 30 minutes
 	// Armazena os dados em cache por 30 minutos
 	ttl := 30 * time.Minute
 	if err := cu.cacheService.Set(ctx, cacheKey, curriculumBodyResponse, ttl); err != nil {
