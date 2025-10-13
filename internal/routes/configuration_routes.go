@@ -18,7 +18,7 @@ func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logge
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 
 	// Initialize configuration dependencies
-	configurationRepo := repositories.NewConfigurationRepository(db)
+	configurationRepo := repositories.NewConfigurationRepository(db, logger)
 	configurationUseCase := usecases.NewConfigurationUseCase(configurationRepo, cacheService, logger)
 	configurationHandler := handlers.NewConfigurationHandler(configurationUseCase)
 

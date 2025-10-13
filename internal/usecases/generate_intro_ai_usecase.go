@@ -103,11 +103,11 @@ If the information is insufficient or unclear:
 	// Call OpenAI API
 	resp, err := uc.openaiClient.Chat.Completions.New(ctx, chatReq)
 	if err != nil {
-		return nil, errors.WrapError(err, "failed to get OpenAI response")
+		return nil, fmt.Errorf("failed to get OpenAI response for intro generation: %w", err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return nil, errors.NewAppError("no response from OpenAI")
+		return nil, fmt.Errorf("no response from OpenAI for intro generation")
 	}
 
 	// Get the filtered content

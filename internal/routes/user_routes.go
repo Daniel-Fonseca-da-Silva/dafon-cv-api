@@ -19,8 +19,8 @@ func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *c
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 
 	// Initialize user dependencies
-	userRepo := repositories.NewUserRepository(db)
-	configurationRepo := repositories.NewConfigurationRepository(db)
+	userRepo := repositories.NewUserRepository(db, logger)
+	configurationRepo := repositories.NewConfigurationRepository(db, logger)
 	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, cacheService, logger)
 	userHandler := handlers.NewUserHandler(userUseCase)
 

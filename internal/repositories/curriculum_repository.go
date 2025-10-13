@@ -5,6 +5,7 @@ import (
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -20,12 +21,13 @@ type CurriculumRepository interface {
 
 // curriculumRepository Implementa a interface CurriculumRepository
 type curriculumRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *zap.Logger
 }
 
 // NewCurriculumRepository Cria uma nova instância de CurriculumRepository
-func NewCurriculumRepository(db *gorm.DB) CurriculumRepository {
-	return &curriculumRepository{db: db}
+func NewCurriculumRepository(db *gorm.DB, logger *zap.Logger) CurriculumRepository {
+	return &curriculumRepository{db: db, logger: logger}
 }
 
 // Create Cria um novo curriculum no banco de dados

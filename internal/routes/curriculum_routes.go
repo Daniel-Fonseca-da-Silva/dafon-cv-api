@@ -19,12 +19,12 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, 
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 
 	// Initialize curriculum dependencies
-	curriculumRepo := repositories.NewCurriculumRepository(db)
+	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
 	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, cacheService, logger)
 
 	// Initialize user dependencies for user verification
-	userRepo := repositories.NewUserRepository(db)
-	configurationRepo := repositories.NewConfigurationRepository(db)
+	userRepo := repositories.NewUserRepository(db, logger)
+	configurationRepo := repositories.NewConfigurationRepository(db, logger)
 	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, cacheService, logger)
 
 	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
