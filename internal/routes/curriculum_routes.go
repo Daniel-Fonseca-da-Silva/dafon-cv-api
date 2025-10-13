@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/gin-gonic/gin"
@@ -13,14 +15,17 @@ import (
 
 // SetupCurriculumRoutes configures curriculum-related routes
 func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
+	// Initialize cache service
+	cacheService := cache.NewCacheService(redis.GetClient(), logger)
+
 	// Initialize curriculum dependencies
 	curriculumRepo := repositories.NewCurriculumRepository(db)
-	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo)
+	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, cacheService, logger)
 
 	// Initialize user dependencies for user verification
 	userRepo := repositories.NewUserRepository(db)
 	configurationRepo := repositories.NewConfigurationRepository(db)
-	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo)
+	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, cacheService, logger)
 
 	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
 
