@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
+	transporthttp "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/transport/http"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,21 +13,21 @@ func StaticTokenMiddleware(staticToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if static token is configured
 		if staticToken == "" {
-			response.HandleValidationError(c, errors.New("static token not configured"))
+			transporthttp.HandleValidationError(c, errors.New("static token not configured"))
 			c.Abort()
 			return
 		}
 
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.HandleValidationError(c, errors.New("authorization header required"))
+			transporthttp.HandleValidationError(c, errors.New("authorization header required"))
 			c.Abort()
 			return
 		}
 
 		// Check if the header starts with "Bearer "
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			response.HandleValidationError(c, errors.New("invalid authorization header format"))
+			transporthttp.HandleValidationError(c, errors.New("invalid authorization header format"))
 			c.Abort()
 			return
 		}
@@ -37,7 +37,7 @@ func StaticTokenMiddleware(staticToken string) gin.HandlerFunc {
 
 		// Validate the token against the static token
 		if tokenString != staticToken {
-			response.HandleValidationError(c, errors.New("invalid token"))
+			transporthttp.HandleValidationError(c, errors.New("invalid token"))
 			c.Abort()
 			return
 		}

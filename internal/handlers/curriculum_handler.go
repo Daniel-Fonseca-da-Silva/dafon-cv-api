@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
+	transporthttp "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/transport/http"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/validation"
 	"github.com/gin-gonic/gin"
@@ -31,7 +31,7 @@ func NewCurriculumHandler(curriculumUseCase usecases.CurriculumUseCase, userUseC
 func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 	var req dto.CreateCurriculumRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 	if !validation.IsValidPhone(req.Phone) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid input data",
-			"errors": []response.ValidationError{
+			"errors": []transporthttp.ValidationError{
 				{
 					Field:   "phone",
 					Message: "Invalid phone number",
@@ -52,20 +52,20 @@ func (h *CurriculumHandler) CreateCurriculum(c *gin.Context) {
 	// Get user ID from request body
 	userUUID, err := uuid.Parse(req.UserID)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid user ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	// Verify if the user exists in the database
 	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userUUID)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("user not found"))
+		transporthttp.HandleValidationError(c, errors.New("user not found"))
 		return
 	}
 
 	curriculum, err := h.curriculumUseCase.CreateCurriculum(c.Request.Context(), userUUID, &req)
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -77,13 +77,13 @@ func (h *CurriculumHandler) GetCurriculumByID(c *gin.Context) {
 	idStr := c.Param("curriculum_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid curriculum ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid curriculum ID format"))
 		return
 	}
 
 	curriculum, err := h.curriculumUseCase.GetCurriculumByID(c.Request.Context(), id)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("curriculum not found"))
+		transporthttp.HandleValidationError(c, errors.New("curriculum not found"))
 		return
 	}
 
@@ -96,14 +96,14 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 	userIDStr := c.Param("user_id")
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid user ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	// Verificar se o usuário existe
 	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("user not found"))
+		transporthttp.HandleValidationError(c, errors.New("user not found"))
 		return
 	}
 
@@ -116,27 +116,27 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 	// Converter page para int
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
-		response.HandleValidationError(c, errors.New("invalid page format, must be a positive integer"))
+		transporthttp.HandleValidationError(c, errors.New("invalid page format, must be a positive integer"))
 		return
 	}
 
 	// Converter pageSize para int
 	pageSize, err := strconv.Atoi(pageSizeStr)
 	if err != nil || pageSize < 1 {
-		response.HandleValidationError(c, errors.New("invalid page_size format, must be a positive integer"))
+		transporthttp.HandleValidationError(c, errors.New("invalid page_size format, must be a positive integer"))
 		return
 	}
 
 	// Validar sortOrder
 	if sortOrder != "ASC" && sortOrder != "DESC" {
-		response.HandleValidationError(c, errors.New("invalid sort_order format, must be ASC or DESC"))
+		transporthttp.HandleValidationError(c, errors.New("invalid sort_order format, must be ASC or DESC"))
 		return
 	}
 
 	// Chamar o usecase passando o userID
 	curriculums, err := h.curriculumUseCase.GetAllCurriculums(c.Request.Context(), userID, page, pageSize, sortBy, sortOrder)
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -156,13 +156,13 @@ func (h *CurriculumHandler) GetCurriculumBody(c *gin.Context) {
 	curriculumIDStr := c.Param("curriculum_id")
 	curriculumID, err := uuid.Parse(curriculumIDStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid curriculum ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid curriculum ID format"))
 		return
 	}
 
 	curriculumBody, err := h.curriculumUseCase.GetCurriculumBody(c.Request.Context(), curriculumID)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("curriculum not found"))
+		transporthttp.HandleValidationError(c, errors.New("curriculum not found"))
 		return
 	}
 
@@ -174,12 +174,12 @@ func (h *CurriculumHandler) DeleteCurriculum(c *gin.Context) {
 	idStr := c.Param("curriculum_id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid curriculum ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid curriculum ID format"))
 		return
 	}
 
 	if err := h.curriculumUseCase.DeleteCurriculum(c.Request.Context(), id); err != nil {
-		response.HandleValidationError(c, errors.New("failed to delete curriculum"))
+		transporthttp.HandleValidationError(c, errors.New("failed to delete curriculum"))
 		return
 	}
 
