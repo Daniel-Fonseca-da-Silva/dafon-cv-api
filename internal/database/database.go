@@ -34,11 +34,7 @@ func Connect(cfg *config.Config, log *zap.Logger) error {
 		return errors.WrapError(err, "failed to connect to database")
 	}
 
-	log.Info("Database connected successfully",
-		zap.String("host", cfg.DB.Host),
-		zap.String("port", cfg.DB.Port),
-		zap.String("database", cfg.DB.Name),
-	)
+	log.Info("Database connected successfully")
 
 	return nil
 }

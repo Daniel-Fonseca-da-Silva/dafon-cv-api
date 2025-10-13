@@ -55,10 +55,7 @@ func Connect(cfg *config.Config, logger *zap.Logger) error {
 		return err
 	}
 
-	logger.Info("Successfully connected to Redis",
-		zap.String("host", redisHost),
-		zap.String("port", redisPort),
-		zap.Int("db", redisDB))
+	logger.Info("Successfully connected to Redis")
 
 	return nil
 }
