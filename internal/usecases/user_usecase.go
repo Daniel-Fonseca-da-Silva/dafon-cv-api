@@ -51,8 +51,9 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Create user model
 	user := &models.User{
-		Name:  req.Name,
-		Email: req.Email,
+		Name:     req.Name,
+		Email:    req.Email,
+		ImageURL: req.ImageURL,
 	}
 
 	// Save user to database
@@ -79,6 +80,7 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
+		ImageURL:  user.ImageURL,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}, nil
@@ -112,6 +114,7 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
+		ImageURL:  user.ImageURL,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
@@ -146,6 +149,7 @@ func (uc *userUseCase) GetAllUsers(ctx context.Context) (*dto.UsersResponse, err
 			ID:        user.ID,
 			Name:      user.Name,
 			Email:     user.Email,
+			ImageURL:  user.ImageURL,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 		}
@@ -180,6 +184,9 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 		}
 		user.Email = req.Email
 	}
+	if req.ImageURL != nil {
+		user.ImageURL = req.ImageURL
+	}
 
 	// Save updated user
 	if err := uc.userRepo.Update(ctx, user); err != nil {
@@ -201,6 +208,7 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
+		ImageURL:  user.ImageURL,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}, nil

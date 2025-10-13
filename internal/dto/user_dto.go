@@ -8,14 +8,16 @@ import (
 
 // RegisterRequest represents the request structure for user registration
 type RegisterRequest struct {
-	Name  string `json:"name" binding:"required,min=10,max=100"`
-	Email string `json:"email" binding:"required,email"`
+	Name     string  `json:"name" binding:"required,min=10,max=100"`
+	Email    string  `json:"email" binding:"required,email"`
+	ImageURL *string `json:"image_url" binding:"omitempty,url"`
 }
 
 // UpdateUserRequest represents the request structure for updating a user
 type UpdateUserRequest struct {
-	Name  string `json:"name" binding:"omitempty,min=10,max=100"`
-	Email string `json:"email" binding:"omitempty,email"`
+	Name     string  `json:"name" binding:"omitempty,min=10,max=100"`
+	Email    string  `json:"email" binding:"omitempty,email"`
+	ImageURL *string `json:"image_url" binding:"omitempty,url"`
 }
 
 // UserResponse represents the response structure for user data
@@ -23,6 +25,7 @@ type UserResponse struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
+	ImageURL  *string   `json:"image_url,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

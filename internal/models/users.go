@@ -7,9 +7,11 @@ import (
 
 type User struct {
 	gorm.Model
-	ID            uuid.UUID      `json:"id" gorm:"type:char(36);primary_key;default:(UUID());table:user"`
-	Name          string         `json:"name" gorm:"size:255;not null"`
-	Email         string         `json:"email" gorm:"size:255;unique;not null"`
+	ID       uuid.UUID `json:"id" gorm:"type:char(36);primary_key;default:(UUID());table:user"`
+	Name     string    `json:"name" gorm:"size:255;not null"`
+	Email    string    `json:"email" gorm:"size:255;unique;not null"`
+	ImageURL *string   `json:"image_url,omitempty" gorm:"size:512"`
+
 	Curriculums   []Curriculums  `json:"curriculums,omitempty" gorm:"foreignKey:UserID"`
 	Configuration *Configuration `json:"configuration,omitempty" gorm:"foreignKey:UserID"`
 	Sessions      []Session      `json:"sessions,omitempty" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
