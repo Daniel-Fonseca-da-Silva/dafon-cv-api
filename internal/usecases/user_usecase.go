@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
@@ -56,7 +57,8 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Save user to database
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, err
+		uc.logger.Error("Failed to create user in database", zap.Error(err), zap.String("user_id", user.ID.String()))
+		return nil, fmt.Errorf("failed to create user in database: %w", err)
 	}
 
 	// Create default configuration for the user
@@ -68,7 +70,8 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 	}
 
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
-		return nil, err
+		uc.logger.Error("Failed to create user configuration", zap.Error(err), zap.String("user_id", user.ID.String()))
+		return nil, fmt.Errorf("failed to create user configuration: %w", err)
 	}
 
 	// Return response
@@ -100,7 +103,8 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 	// Cache miss - get from database
 	user, err := uc.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		uc.logger.Error("Failed to get user by ID from database", zap.Error(err), zap.String("user_id", id.String()))
+		return nil, fmt.Errorf("failed to get user by ID from database: %w", err)
 	}
 
 	// Create response
@@ -132,7 +136,8 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 func (uc *userUseCase) GetAllUsers(ctx context.Context) (*dto.UsersResponse, error) {
 	users, err := uc.userRepo.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		uc.logger.Error("Failed to get all users from database", zap.Error(err))
+		return nil, fmt.Errorf("failed to get all users from database: %w", err)
 	}
 
 	userResponses := make([]dto.UserResponse, len(users))
@@ -157,7 +162,8 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 	// Get existing user
 	user, err := uc.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		uc.logger.Error("Failed to get user by ID for update", zap.Error(err), zap.String("user_id", id.String()))
+		return nil, fmt.Errorf("failed to get user by ID for update: %w", err)
 	}
 
 	// Update fields if provided
@@ -177,7 +183,8 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 
 	// Save updated user
 	if err := uc.userRepo.Update(ctx, user); err != nil {
-		return nil, err
+		uc.logger.Error("Failed to update user in database", zap.Error(err), zap.String("user_id", id.String()))
+		return nil, fmt.Errorf("failed to update user in database: %w", err)
 	}
 
 	// Invalidate cache for this user
