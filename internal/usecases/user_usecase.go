@@ -58,7 +58,7 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Save user to database
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		uc.logger.Error("Failed to create user in database", zap.Error(err), zap.String("user_id", user.ID.String()))
+		uc.logger.Error("Failed to create user in database", zap.Error(err))
 		return nil, fmt.Errorf("failed to create user in database: %w", err)
 	}
 
@@ -71,7 +71,7 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 	}
 
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
-		uc.logger.Error("Failed to create user configuration", zap.Error(err), zap.String("user_id", user.ID.String()))
+		uc.logger.Error("Failed to create user configuration", zap.Error(err))
 		return nil, fmt.Errorf("failed to create user configuration: %w", err)
 	}
 
@@ -98,14 +98,14 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 			zap.Error(err),
 			zap.String("user_id", id.String()))
 	} else if found {
-		uc.logger.Debug("User retrieved from cache", zap.String("user_id", id.String()))
+		uc.logger.Debug("User retrieved from cache")
 		return &userResponse, nil
 	}
 
 	// Cache miss - get from database
 	user, err := uc.userRepo.GetByID(ctx, id)
 	if err != nil {
-		uc.logger.Error("Failed to get user by ID from database", zap.Error(err), zap.String("user_id", id.String()))
+		uc.logger.Error("Failed to get user by ID from database", zap.Error(err))
 		return nil, fmt.Errorf("failed to get user by ID from database: %w", err)
 	}
 

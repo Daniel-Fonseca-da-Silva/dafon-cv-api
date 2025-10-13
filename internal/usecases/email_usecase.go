@@ -56,10 +56,7 @@ func NewEmailUseCase(logger *zap.Logger) (EmailUseCase, error) {
 
 // SendSessionTokenEmail sends a session token to the user's email
 func (uc *emailUseCase) SendSessionTokenEmail(to, name, token string) error {
-	uc.logger.Info("Sending session token email",
-		zap.String("to", to),
-		zap.String("name", name),
-	)
+	uc.logger.Info("Sending session token email")
 
 	// The token is passed directly from the frontend, no need to create a link
 	// The frontend will handle the token processing
@@ -146,19 +143,15 @@ func (uc *emailUseCase) SendSessionTokenEmail(to, name, token string) error {
 		Html:    htmlContent,
 	}
 
-	sent, err := uc.client.Emails.Send(params)
+	_, err := uc.client.Emails.Send(params)
 	if err != nil {
 		uc.logger.Error("Failed to send session token email",
-			zap.String("to", to),
 			zap.Error(err),
 		)
 		return errors.WrapError(errors.ErrEmailSendFailed, "failed to send session token email")
 	}
 
-	uc.logger.Info("Session token email sent successfully",
-		zap.String("to", to),
-		zap.String("email_id", sent.Id),
-	)
+	uc.logger.Info("Session token email sent successfully")
 
 	return nil
 }

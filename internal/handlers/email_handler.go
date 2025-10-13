@@ -32,25 +32,17 @@ func (h *EmailHandler) SendEmail(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("Processing email request",
-		zap.String("email", req.Email),
-		zap.String("name", req.Name),
-	)
+	h.logger.Info("Processing email request")
 
 	// Send the authentication email
 	err := h.emailUseCase.SendSessionTokenEmail(req.Email, req.Name, req.URLToken)
 	if err != nil {
-		h.logger.Error("Failed to send email",
-			zap.String("email", req.Email),
-			zap.Error(err),
-		)
+		h.logger.Error("Failed to send email")
 		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
-	h.logger.Info("Email sent successfully",
-		zap.String("email", req.Email),
-	)
+	h.logger.Info("Email sent successfully")
 
 	response := dto.SendEmailResponse{
 		Message: "Email sent successfully",
