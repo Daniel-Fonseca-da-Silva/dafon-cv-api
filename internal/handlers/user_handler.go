@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
+	transporthttp "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/transport/http"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -28,13 +28,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid user ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	user, err := h.userUseCase.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("user not found"))
+		transporthttp.HandleValidationError(c, errors.New("user not found"))
 		return
 	}
 
@@ -45,7 +45,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	users, err := h.userUseCase.GetAllUsers(c.Request.Context())
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -57,19 +57,19 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid user ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
 	user, err := h.userUseCase.UpdateUser(c.Request.Context(), id, &req)
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -80,13 +80,13 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
 	user, err := h.userUseCase.CreateUser(c.Request.Context(), &req)
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
@@ -98,12 +98,12 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		response.HandleValidationError(c, errors.New("invalid user ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
 	if err := h.userUseCase.DeleteUser(c.Request.Context(), id); err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 

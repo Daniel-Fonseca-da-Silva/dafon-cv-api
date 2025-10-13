@@ -88,7 +88,6 @@ func (rl *RateLimiter) Allow(key string) bool {
 
 	if !allowed {
 		rl.logger.Warn("Rate limit exceeded",
-			zap.String("key", key),
 			zap.Int64("current_count", incr.Val()),
 			zap.Int("limit", rl.limit))
 	}

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/response"
+	transporthttp "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/transport/http"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
 	"github.com/gin-gonic/gin"
 )
@@ -25,13 +25,13 @@ func NewGenerateCoursesAIHandler(generateCoursesAIUseCase usecases.GenerateCours
 func (h *GenerateCoursesAIHandler) FilterContent(c *gin.Context) {
 	var req dto.GenerateCoursesAIRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
 	aiResponse, err := h.generateCoursesAIUseCase.FilterContent(c.Request.Context(), &req)
 	if err != nil {
-		response.HandleValidationError(c, err)
+		transporthttp.HandleValidationError(c, err)
 		return
 	}
 
