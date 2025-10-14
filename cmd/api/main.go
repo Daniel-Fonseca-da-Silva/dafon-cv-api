@@ -8,8 +8,11 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/database"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/routes"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/validators"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
@@ -43,15 +46,18 @@ func main() {
 	// Create router
 	router := gin.Default()
 
+	// Register global custom validators for Gin binding
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		validators.RegisterCustomValidators(v)
+	}
+
 	// Disable automatic redirects
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
 	// Configure CORS
 	allowedOrigins := []string{
-		"http://localhost:5173", "http://localhost:3000",
-		"http://127.0.0.1:5173", "http://127.0.0.1:3000",
-		"http://localhost:8080", "http://127.0.0.1:8080",
+		"http://localhost:3000",
 	}
 
 	// Add Railway domain if APP_URL is set

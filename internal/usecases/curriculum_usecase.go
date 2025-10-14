@@ -8,6 +8,7 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/validators"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -56,6 +57,8 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 
 	// Validar o modelo de curriculum
 	validate := validator.New()
+	// Register custom validators
+	validators.RegisterCustomValidators(validate)
 	if err := validate.Struct(curriculum); err != nil {
 		return nil, err
 	}
