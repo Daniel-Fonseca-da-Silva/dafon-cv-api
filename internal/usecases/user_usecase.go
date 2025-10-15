@@ -65,10 +65,9 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Create default configuration for the user
 	configuration := &models.Configuration{
-		UserID:        user.ID,
-		Language:      "en",  // Default language
-		Newsletter:    false, // Default: newsletter off
-		ReceiveEmails: false, // Default: receive emails off
+		UserID:     user.ID,
+		Language:   "en",  // Default language
+		Newsletter: false, // Default: newsletter off
 	}
 
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {

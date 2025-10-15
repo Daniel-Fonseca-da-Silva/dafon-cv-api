@@ -57,13 +57,12 @@ func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, use
 
 	// Create response
 	configurationResponse = dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}
 
 	// Armazena os dados em cache por 15 minutos
@@ -85,10 +84,9 @@ func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, use
 // CreateDefaultConfiguration creates a default configuration for a user
 func (c *configurationUseCase) CreateDefaultConfiguration(ctx context.Context, userID uuid.UUID) (*dto.ConfigurationResponse, error) {
 	configuration := &models.Configuration{
-		UserID:        userID,
-		Language:      "en-us", // Default language
-		Newsletter:    false,   // Default: newsletter off
-		ReceiveEmails: false,   // Default: receive emails off
+		UserID:     userID,
+		Language:   "en-us", // Default language
+		Newsletter: false,   // Default: newsletter off
 	}
 
 	if err := c.configurationRepo.Create(ctx, configuration); err != nil {
@@ -96,13 +94,12 @@ func (c *configurationUseCase) CreateDefaultConfiguration(ctx context.Context, u
 	}
 
 	return &dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}, nil
 }
 
@@ -123,10 +120,6 @@ func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, id uuid.
 		configuration.Newsletter = req.Newsletter
 	}
 
-	if req.ReceiveEmails != configuration.ReceiveEmails {
-		configuration.ReceiveEmails = req.ReceiveEmails
-	}
-
 	// Save updated configuration
 	if err := c.configurationRepo.Update(ctx, configuration); err != nil {
 		return nil, err
@@ -143,13 +136,12 @@ func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, id uuid.
 	}
 
 	return &dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}, nil
 }
 
