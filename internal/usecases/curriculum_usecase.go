@@ -52,6 +52,7 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		Languages:     req.Languages,
 		Courses:       req.Courses,
 		SocialLinks:   req.SocialLinks,
+		ImageURL:      req.ImageURL,
 		UserID:        userID,
 	}
 
@@ -134,6 +135,7 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		Languages:     curriculum.Languages,
 		Courses:       curriculum.Courses,
 		SocialLinks:   curriculum.SocialLinks,
+		ImageURL:      curriculum.ImageURL,
 		Works:         worksResponse,
 		Educations:    educationsResponse,
 		CreatedAt:     curriculum.CreatedAt,
@@ -205,6 +207,7 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		Languages:     curriculum.Languages,
 		Courses:       curriculum.Courses,
 		SocialLinks:   curriculum.SocialLinks,
+		ImageURL:      curriculum.ImageURL,
 		Works:         worksResponse,
 		Educations:    educationsResponse,
 		CreatedAt:     curriculum.CreatedAt,
@@ -286,6 +289,7 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 			Languages:     curriculum.Languages,
 			Courses:       curriculum.Courses,
 			SocialLinks:   curriculum.SocialLinks,
+			ImageURL:      curriculum.ImageURL,
 			Works:         worksResponse,
 			Educations:    educationsResponse,
 			CreatedAt:     curriculum.CreatedAt,
@@ -376,6 +380,11 @@ func buildCurriculumBodyText(curriculum *models.Curriculums) string {
 	// Social Links
 	if curriculum.SocialLinks != "" {
 		body += "Social Links " + curriculum.SocialLinks + " "
+	}
+
+	// Image URL
+	if curriculum.ImageURL != nil && *curriculum.ImageURL != "" {
+		body += "Image URL " + *curriculum.ImageURL + " "
 	}
 
 	// Work Experience
