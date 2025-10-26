@@ -47,7 +47,8 @@ curl http://localhost:8080/health
 **dafon-cv-api** is a complete solution for creating and managing professional CVs, offering:
 
 - ✅ **Static Token Authentication** - Secure API access with configurable tokens
-- ✅ **Complete CV Management** - Full CRUD operations for curriculums, works, and education
+- ✅ **Complete CV Management** - Full CRUD operations for curriculums, works, and education with pagination
+- ✅ **Text Format Export** - Generate curriculum body in plain text format for easy sharing
 - ✅ **AI-Powered Content Generation** - 7 specialized AI endpoints for professional content
 - ✅ **User & Configuration Management** - Comprehensive user profiles and settings
 - ✅ **Email Integration** - Resend-powered email functionality
@@ -264,11 +265,15 @@ erDiagram
     string full_name
     string email
     string phone
+    string driver_license
     string intro
     string skills
     string languages
     string courses
     string social_links
+    string image_url
+    datetime created_at
+    datetime updated_at
   }
 
   WORKS {
@@ -279,6 +284,8 @@ erDiagram
     string description
     date start_date
     date end_date
+    datetime created_at
+    datetime updated_at
   }
 
   EDUCATIONS {
@@ -289,6 +296,8 @@ erDiagram
     date start_date
     date end_date
     string description
+    datetime created_at
+    datetime updated_at
   }
 ```
 
@@ -304,6 +313,7 @@ All endpoints require static token authentication via the `Authorization: Bearer
 - **⚡ Cache Invalidation** - Automatic cache invalidation on data updates
 - **📊 Performance Monitoring** - Detailed cache hit/miss logging
 - **🔄 Fallback Strategy** - Graceful degradation when cache is unavailable
+- **📄 Pagination Support** - Built-in pagination for list endpoints with sorting
 
 ### Health Check
 
@@ -325,10 +335,52 @@ DELETE /api/v1/user/:id                # Delete user
 
 ```http
 POST   /api/v1/curriculums                           # Create curriculum
-GET    /api/v1/curriculums/get-all-by-user/:user_id   # Get all curriculums by user
+GET    /api/v1/curriculums/get-all-by-user/:user_id   # Get all curriculums by user (paginated)
 GET    /api/v1/curriculums/:curriculum_id            # Get curriculum by ID
-GET    /api/v1/curriculums/get-body/:curriculum_id   # Get curriculum body
+GET    /api/v1/curriculums/get-body/:curriculum_id   # Get curriculum body (text format)
 DELETE /api/v1/curriculums/:curriculum_id            # Delete curriculum
+```
+
+**Pagination Parameters for GET all curriculums:**
+- `page` (default: 1) - Page number
+- `page_size` (default: 10, max: 100) - Number of items per page
+- `sort_by` (default: created_at) - Sort field (created_at, updated_at, full_name, email)
+- `sort_order` (default: DESC) - Sort direction (ASC, DESC)
+
+**Example Request:**
+```http
+GET /api/v1/curriculums/get-all-by-user/123e4567-e89b-12d3-a456-426614174000?page=1&page_size=5&sort_by=created_at&sort_order=DESC
+```
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "full_name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "driver_license": "ABC123456",
+      "intro": "Experienced software developer...",
+      "skills": "Go, Python, JavaScript...",
+      "languages": "English, Portuguese...",
+      "courses": "Advanced Go Programming...",
+      "social_links": "https://linkedin.com/in/johndoe...",
+      "image_url": "https://example.com/photo.jpg",
+      "works": [...],
+      "educations": [...],
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 5,
+    "sort_by": "created_at",
+    "sort_order": "DESC"
+  }
+}
 ```
 
 ### AI Content Generation
@@ -504,6 +556,7 @@ flowchart LR
 - **Advanced Caching System** - Redis-based intelligent caching with TTL and invalidation
 - **Cache-Aside Pattern** - Lazy loading with automatic fallback to database
 - **Smart TTL Management** - Optimized cache expiration for different data types
+- **Pagination System** - Built-in pagination with sorting for list endpoints
 
 ### Caching System Details
 
@@ -526,10 +579,24 @@ flowchart LR
 - **Throughput Increase** - 10x improvement in concurrent request handling
 - **Resource Efficiency** - Reduced CPU and memory usage
 
+### Curriculum Text Export
+
+The API provides a specialized endpoint for generating curriculum content in plain text format:
+
+- **Text Format Generation** - Converts structured curriculum data to readable text
+- **Comprehensive Content** - Includes all personal info, work experience, education, and skills
+- **Formatted Output** - Well-structured text with proper sections and formatting
+- **Cached Performance** - Text generation is cached for 30 minutes for optimal performance
+
+**Use Cases:**
+- Email attachments
+- Plain text sharing
+- Integration with external systems
+- Print-friendly format
+
 ### Recommended Enhancements
 
 - **Cache Warming** - Pre-populate cache with frequently accessed data
-- **Pagination** - Implement pagination for list endpoints
 - **Async Processing** - Queue system for heavy AI requests
 - **Database Indexing** - Optimize queries with proper indexes
 - **Load Balancing** - Multiple API instances behind load balancer

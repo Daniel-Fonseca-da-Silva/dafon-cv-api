@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// RateLimiter handles rate limiting using Redis
+// RateLimiter lida com o rate limiting usando Redis
 type RateLimiter struct {
 	client  *redis.Client
 	limit   int
@@ -22,7 +22,7 @@ type RateLimiter struct {
 	logger  *zap.Logger
 }
 
-// getEnvAsInt gets an environment variable as integer with a default value
+// getEnvAsInt obtém uma variável de ambiente como um inteiro com um valor padrão
 func getEnvAsInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
@@ -32,7 +32,7 @@ func getEnvAsInt(key string, defaultValue int) int {
 	return defaultValue
 }
 
-// NewRateLimiter creates a new rate limiter instance
+// NewRateLimiter cria uma nova instância de rate limiter
 func NewRateLimiter(client *redis.Client, limit int, windows time.Duration, logger *zap.Logger) *RateLimiter {
 	return &RateLimiter{
 		client:  client,
@@ -43,7 +43,7 @@ func NewRateLimiter(client *redis.Client, limit int, windows time.Duration, logg
 	}
 }
 
-// NewDefaultRateLimiter creates a rate limiter with default configuration from environment
+// NewDefaultRateLimiter cria um rate limiter com a configuração padrão do ambiente
 func NewDefaultRateLimiter(client *redis.Client, logger *zap.Logger) *RateLimiter {
 	limit := getEnvAsInt("RATE_LIMIT", 100)
 	windowMinutes := getEnvAsInt("RATE_WINDOW_MINUTES", 1)
@@ -57,7 +57,7 @@ func NewDefaultRateLimiter(client *redis.Client, logger *zap.Logger) *RateLimite
 	}
 }
 
-// NewAIRateLimiter creates a rate limiter with stricter limits for AI endpoints
+// NewAIRateLimiter cria um rate limiter com limites mais rigorosos para endpoints AI
 func NewAIRateLimiter(client *redis.Client, logger *zap.Logger) *RateLimiter {
 	limit := getEnvAsInt("AI_RATE_LIMIT", 10)
 	windowMinutes := getEnvAsInt("AI_RATE_WINDOW_MINUTES", 1)
@@ -71,17 +71,22 @@ func NewAIRateLimiter(client *redis.Client, logger *zap.Logger) *RateLimiter {
 	}
 }
 
-// Allow checks if the request is allowed based on the key
+// Allow verifica se a solicitação é permitida com base na chave
 func (rl *RateLimiter) Allow(key string) bool {
+	// Incrementa o contador do Redis
 	pipe := rl.client.TxPipeline()
 
 	incr := pipe.Incr(rl.context, key)
-	pipe.Expire(rl.context, key, rl.windows)
 
 	_, err := pipe.Exec(rl.context)
 	if err != nil {
 		rl.logger.Error("Failed to execute Redis pipeline", zap.Error(err))
 		return false
+	}
+
+	// Se o contador for 1, define o tempo de expiração para a chave
+	if incr.Val() == 1 {
+		rl.client.Expire(rl.context, key, rl.windows)
 	}
 
 	allowed := incr.Val() <= int64(rl.limit)
@@ -95,23 +100,23 @@ func (rl *RateLimiter) Allow(key string) bool {
 	return allowed
 }
 
-// GetClientIP extracts the client IP from the request
+// GetClientIP extrai o IP do cliente da solicitação
 func GetClientIP(r *http.Request) string {
-	// Check for X-Forwarded-For header (for load balancers/proxies)
+	// Verifica o cabeçalho X-Forwarded-For (para balanceadores de carga/proxies)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		if ip, _, err := net.SplitHostPort(xff); err == nil {
 			return ip
 		}
 	}
 
-	// Check for X-Real-IP header
+	// Verifica o cabeçalho X-Real-IP
 	if xri := r.Header.Get("X-Real-IP"); xri != "" {
 		if ip, _, err := net.SplitHostPort(xri); err == nil {
 			return ip
 		}
 	}
 
-	// Fallback to RemoteAddr
+	// Caso não encontre, usa o RemoteAddr
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return r.RemoteAddr
@@ -120,7 +125,7 @@ func GetClientIP(r *http.Request) string {
 	return ip
 }
 
-// RateLimiterMiddleware creates a middleware for rate limiting
+// RateLimiterMiddleware cria um middleware para rate limiting
 func RateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientIP := GetClientIP(c.Request)
@@ -138,13 +143,13 @@ func RateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	}
 }
 
-// UserRateLimiterMiddleware creates a middleware for user-specific rate limiting
+// UserRateLimiterMiddleware cria um middleware para rate limiting específico para usuários
 func UserRateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try to get user ID from context (set by auth middleware)
+		// Tenta obter o ID do usuário do contexto (definido pelo middleware de autenticação)
 		userID, exists := c.Get("user_id")
 		if !exists {
-			// Fallback to IP-based rate limiting
+			// Caso não encontre, usa o rate limiting baseado em IP
 			clientIP := GetClientIP(c.Request)
 			if !rl.Allow(clientIP) {
 				c.JSON(http.StatusTooManyRequests, gin.H{
@@ -155,7 +160,7 @@ func UserRateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 				return
 			}
 		} else {
-			// Use user ID for rate limiting
+			// Usa o ID do usuário para rate limiting
 			userKey := "user:" + strconv.Itoa(userID.(int))
 			if !rl.Allow(userKey) {
 				c.JSON(http.StatusTooManyRequests, gin.H{

@@ -8,6 +8,7 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/validators"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -51,11 +52,14 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		Languages:     req.Languages,
 		Courses:       req.Courses,
 		SocialLinks:   req.SocialLinks,
+		ImageURL:      req.ImageURL,
 		UserID:        userID,
 	}
 
 	// Validar o modelo de curriculum
 	validate := validator.New()
+	// Register custom validators
+	validators.RegisterCustomValidators(validate)
 	if err := validate.Struct(curriculum); err != nil {
 		return nil, err
 	}
@@ -131,6 +135,7 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 		Languages:     curriculum.Languages,
 		Courses:       curriculum.Courses,
 		SocialLinks:   curriculum.SocialLinks,
+		ImageURL:      curriculum.ImageURL,
 		Works:         worksResponse,
 		Educations:    educationsResponse,
 		CreatedAt:     curriculum.CreatedAt,
@@ -202,6 +207,7 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 		Languages:     curriculum.Languages,
 		Courses:       curriculum.Courses,
 		SocialLinks:   curriculum.SocialLinks,
+		ImageURL:      curriculum.ImageURL,
 		Works:         worksResponse,
 		Educations:    educationsResponse,
 		CreatedAt:     curriculum.CreatedAt,
@@ -283,6 +289,7 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 			Languages:     curriculum.Languages,
 			Courses:       curriculum.Courses,
 			SocialLinks:   curriculum.SocialLinks,
+			ImageURL:      curriculum.ImageURL,
 			Works:         worksResponse,
 			Educations:    educationsResponse,
 			CreatedAt:     curriculum.CreatedAt,
@@ -373,6 +380,11 @@ func buildCurriculumBodyText(curriculum *models.Curriculums) string {
 	// Social Links
 	if curriculum.SocialLinks != "" {
 		body += "Social Links " + curriculum.SocialLinks + " "
+	}
+
+	// Image URL
+	if curriculum.ImageURL != nil && *curriculum.ImageURL != "" {
+		body += "Image URL " + *curriculum.ImageURL + " "
 	}
 
 	// Work Experience

@@ -17,6 +17,7 @@ type Curriculums struct {
 	Languages     string      `json:"languages" gorm:"type:text;not null" validate:"required"`
 	Courses       string      `json:"courses" gorm:"type:text"`
 	SocialLinks   string      `json:"social_links" gorm:"type:text"`
+	ImageURL      *string     `json:"image_url,omitempty" gorm:"size:512"`
 	Works         []Work      `json:"works" gorm:"foreignKey:CurriculumID"`
 	Educations    []Education `json:"educations" gorm:"foreignKey:CurriculumID"`
 	UserID        uuid.UUID   `json:"user_id" gorm:"type:char(36);not null;index" validate:"required"`

@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
@@ -64,10 +65,9 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Create default configuration for the user
 	configuration := &models.Configuration{
-		UserID:        user.ID,
-		Language:      "en",  // Default language
-		Newsletter:    false, // Default: newsletter off
-		ReceiveEmails: false, // Default: receive emails off
+		UserID:     user.ID,
+		Language:   "en",  // Default language
+		Newsletter: false, // Default: newsletter off
 	}
 
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
@@ -77,12 +77,21 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 
 	// Return response
 	return &dto.UserResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		ImageURL:  user.ImageURL,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		ImageURL:   user.ImageURL,
+		Country:    user.Country,
+		State:      user.State,
+		City:       user.City,
+		Phone:      user.Phone,
+		Employment: user.Employment,
+		Gender:     user.Gender,
+		Age:        user.Age,
+		Salary:     user.Salary,
+		Migration:  user.Migration,
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
 	}, nil
 }
 
@@ -111,12 +120,21 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 
 	// Create response
 	userResponse = dto.UserResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		ImageURL:  user.ImageURL,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		ImageURL:   user.ImageURL,
+		Country:    user.Country,
+		State:      user.State,
+		City:       user.City,
+		Phone:      user.Phone,
+		Employment: user.Employment,
+		Gender:     user.Gender,
+		Age:        user.Age,
+		Salary:     user.Salary,
+		Migration:  user.Migration,
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
 	}
 
 	// Armazena os dados em cache por 15 minutos
@@ -146,12 +164,21 @@ func (uc *userUseCase) GetAllUsers(ctx context.Context) (*dto.UsersResponse, err
 	userResponses := make([]dto.UserResponse, len(users))
 	for i, user := range users {
 		userResponses[i] = dto.UserResponse{
-			ID:        user.ID,
-			Name:      user.Name,
-			Email:     user.Email,
-			ImageURL:  user.ImageURL,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
+			ID:         user.ID,
+			Name:       user.Name,
+			Email:      user.Email,
+			ImageURL:   user.ImageURL,
+			Country:    user.Country,
+			State:      user.State,
+			City:       user.City,
+			Phone:      user.Phone,
+			Employment: user.Employment,
+			Gender:     user.Gender,
+			Age:        user.Age,
+			Salary:     user.Salary,
+			Migration:  user.Migration,
+			CreatedAt:  user.CreatedAt,
+			UpdatedAt:  user.UpdatedAt,
 		}
 	}
 
@@ -187,6 +214,33 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 	if req.ImageURL != nil {
 		user.ImageURL = req.ImageURL
 	}
+	if req.Country != "" {
+		user.Country = strings.ToUpper(req.Country)
+	}
+	if req.State != "" {
+		user.State = req.State
+	}
+	if req.City != "" {
+		user.City = req.City
+	}
+	if req.Phone != "" {
+		user.Phone = req.Phone
+	}
+	if req.Employment != nil {
+		user.Employment = *req.Employment
+	}
+	if req.Gender != "" {
+		user.Gender = req.Gender
+	}
+	if req.Age != nil {
+		user.Age = *req.Age
+	}
+	if req.Salary != nil {
+		user.Salary = *req.Salary
+	}
+	if req.Migration != nil {
+		user.Migration = *req.Migration
+	}
 
 	// Save updated user
 	if err := uc.userRepo.Update(ctx, user); err != nil {
@@ -205,12 +259,21 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 	}
 
 	return &dto.UserResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		ImageURL:  user.ImageURL,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		ImageURL:   user.ImageURL,
+		Country:    user.Country,
+		State:      user.State,
+		City:       user.City,
+		Phone:      user.Phone,
+		Employment: user.Employment,
+		Gender:     user.Gender,
+		Age:        user.Age,
+		Salary:     user.Salary,
+		Migration:  user.Migration,
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
 	}, nil
 }
 

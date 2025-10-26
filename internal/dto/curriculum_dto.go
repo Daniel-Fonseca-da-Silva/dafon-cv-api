@@ -18,6 +18,7 @@ type CreateCurriculumRequest struct {
 	Languages     string                   `json:"languages" binding:"required"`
 	Courses       string                   `json:"courses"`
 	SocialLinks   string                   `json:"social_links"`
+	ImageURL      *string                  `json:"image_url" binding:"omitempty,url"`
 	Works         []CreateWorkRequest      `json:"works"`
 	Educations    []CreateEducationRequest `json:"educations"`
 }
@@ -34,6 +35,7 @@ type CurriculumResponse struct {
 	Languages     string              `json:"languages"`
 	Courses       string              `json:"courses"`
 	SocialLinks   string              `json:"social_links"`
+	ImageURL      *string             `json:"image_url,omitempty"`
 	Works         []WorkResponse      `json:"works"`
 	Educations    []EducationResponse `json:"educations"`
 	CreatedAt     time.Time           `json:"created_at"`

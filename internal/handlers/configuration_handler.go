@@ -21,7 +21,7 @@ func NewConfigurationHandler(configurationUseCase usecases.ConfigurationUseCase)
 	}
 }
 
-// GetConfigurationByUserID handles GET /configuration/user/:user_id request
+// Retorna uma configuração por ID do usuário
 func (h *ConfigurationHandler) GetConfigurationByUserID(c *gin.Context) {
 	userIDStr := c.Param("user_id")
 	userID, err := uuid.Parse(userIDStr)
@@ -39,12 +39,12 @@ func (h *ConfigurationHandler) GetConfigurationByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, configuration)
 }
 
-// UpdateConfiguration handles PATCH /configuration/:id request
+// Atualiza uma configuração por ID do usuário
 func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
-	idStr := c.Param("user_id")
-	id, err := uuid.Parse(idStr)
+	userIDStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		transporthttp.HandleValidationError(c, errors.New("invalid configuration ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
 		return
 	}
 
-	configuration, err := h.configurationUseCase.UpdateConfiguration(c.Request.Context(), id, &req)
+	configuration, err := h.configurationUseCase.UpdateConfiguration(c.Request.Context(), userID, &req)
 	if err != nil {
 		transporthttp.HandleValidationError(c, err)
 		return
@@ -63,16 +63,16 @@ func (h *ConfigurationHandler) UpdateConfiguration(c *gin.Context) {
 	c.JSON(http.StatusOK, configuration)
 }
 
-// DeleteConfiguration handles DELETE /configuration/:id request
+// Deleta uma configuração por ID do usuário
 func (h *ConfigurationHandler) DeleteConfiguration(c *gin.Context) {
-	idStr := c.Param("user_id")
-	id, err := uuid.Parse(idStr)
+	userIDStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		transporthttp.HandleValidationError(c, errors.New("invalid configuration ID format"))
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
 		return
 	}
 
-	if err := h.configurationUseCase.DeleteConfiguration(c.Request.Context(), id); err != nil {
+	if err := h.configurationUseCase.DeleteConfiguration(c.Request.Context(), userID); err != nil {
 		transporthttp.HandleValidationError(c, errors.New("failed to delete configuration"))
 		return
 	}

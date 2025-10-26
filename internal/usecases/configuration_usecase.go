@@ -15,8 +15,8 @@ import (
 type ConfigurationUseCase interface {
 	GetConfigurationByUserID(ctx context.Context, userID uuid.UUID) (*dto.ConfigurationResponse, error)
 	CreateDefaultConfiguration(ctx context.Context, userID uuid.UUID) (*dto.ConfigurationResponse, error)
-	UpdateConfiguration(ctx context.Context, id uuid.UUID, req *dto.UpdateConfigurationRequest) (*dto.ConfigurationResponse, error)
-	DeleteConfiguration(ctx context.Context, id uuid.UUID) error
+	UpdateConfiguration(ctx context.Context, userID uuid.UUID, req *dto.UpdateConfigurationRequest) (*dto.ConfigurationResponse, error)
+	DeleteConfiguration(ctx context.Context, userID uuid.UUID) error
 }
 
 type configurationUseCase struct {
@@ -33,7 +33,7 @@ func NewConfigurationUseCase(configurationRepo repositories.ConfigurationReposit
 	}
 }
 
-// GetConfigurationByUserID retrieves a configuration by user ID with cache support
+// Retorna uma configuração por ID do usuário com suporte a cache
 func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, userID uuid.UUID) (*dto.ConfigurationResponse, error) {
 	cacheKey := cache.GenerateConfigurationCacheKey(userID.String())
 
@@ -49,7 +49,6 @@ func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, use
 		return &configurationResponse, nil
 	}
 
-	// Cache miss - get from database
 	configuration, err := c.configurationRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -57,13 +56,12 @@ func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, use
 
 	// Create response
 	configurationResponse = dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}
 
 	// Armazena os dados em cache por 15 minutos
@@ -82,13 +80,12 @@ func (c *configurationUseCase) GetConfigurationByUserID(ctx context.Context, use
 	return &configurationResponse, nil
 }
 
-// CreateDefaultConfiguration creates a default configuration for a user
+// Cria uma configuração padrão para um usuário
 func (c *configurationUseCase) CreateDefaultConfiguration(ctx context.Context, userID uuid.UUID) (*dto.ConfigurationResponse, error) {
 	configuration := &models.Configuration{
-		UserID:        userID,
-		Language:      "en-us", // Default language
-		Newsletter:    false,   // Default: newsletter off
-		ReceiveEmails: false,   // Default: receive emails off
+		UserID:     userID,
+		Language:   "en-us", // Idioma padrão
+		Newsletter: false,   // Newsletter padrão: off
 	}
 
 	if err := c.configurationRepo.Create(ctx, configuration); err != nil {
@@ -96,25 +93,24 @@ func (c *configurationUseCase) CreateDefaultConfiguration(ctx context.Context, u
 	}
 
 	return &dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}, nil
 }
 
-// UpdateConfiguration updates an existing configuration
-func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, id uuid.UUID, req *dto.UpdateConfigurationRequest) (*dto.ConfigurationResponse, error) {
-	// Get existing configuration
-	configuration, err := c.configurationRepo.GetByID(ctx, id)
+// Atualiza uma configuração existente
+func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, userID uuid.UUID, req *dto.UpdateConfigurationRequest) (*dto.ConfigurationResponse, error) {
+	// Obtém a configuração existente pelo ID do usuário
+	configuration, err := c.configurationRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update fields if provided
+	// Atualiza os campos se fornecidos
 	if req.Language != "" {
 		configuration.Language = req.Language
 	}
@@ -123,16 +119,12 @@ func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, id uuid.
 		configuration.Newsletter = req.Newsletter
 	}
 
-	if req.ReceiveEmails != configuration.ReceiveEmails {
-		configuration.ReceiveEmails = req.ReceiveEmails
-	}
-
-	// Save updated configuration
+	// Salva a configuração atualizada
 	if err := c.configurationRepo.Update(ctx, configuration); err != nil {
 		return nil, err
 	}
 
-	// Invalidate cache for this user's configuration
+	// Invalida o cache para a configuração deste usuário
 	cacheKey := cache.GenerateConfigurationCacheKey(configuration.UserID.String())
 	if err := c.cacheService.Delete(ctx, cacheKey); err != nil {
 		c.logger.Warn("Failed to invalidate configuration cache after update",
@@ -143,30 +135,29 @@ func (c *configurationUseCase) UpdateConfiguration(ctx context.Context, id uuid.
 	}
 
 	return &dto.ConfigurationResponse{
-		ID:            configuration.ID,
-		UserID:        configuration.UserID,
-		Language:      configuration.Language,
-		Newsletter:    configuration.Newsletter,
-		ReceiveEmails: configuration.ReceiveEmails,
-		CreatedAt:     configuration.CreatedAt,
-		UpdatedAt:     configuration.UpdatedAt,
+		ID:         configuration.ID,
+		UserID:     configuration.UserID,
+		Language:   configuration.Language,
+		Newsletter: configuration.Newsletter,
+		CreatedAt:  configuration.CreatedAt,
+		UpdatedAt:  configuration.UpdatedAt,
 	}, nil
 }
 
-// DeleteConfiguration deletes a configuration
-func (c *configurationUseCase) DeleteConfiguration(ctx context.Context, id uuid.UUID) error {
-	// Check if configuration exists and get user ID for cache invalidation
-	configuration, err := c.configurationRepo.GetByID(ctx, id)
+// Deleta uma configuração
+func (c *configurationUseCase) DeleteConfiguration(ctx context.Context, userID uuid.UUID) error {
+	// Verifica se a configuração existe e obtém a configuração para invalidar o cache
+	configuration, err := c.configurationRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	// Delete configuration from database
-	if err := c.configurationRepo.Delete(ctx, id); err != nil {
+	// Deleta a configuração do banco de dados
+	if err := c.configurationRepo.Delete(ctx, configuration.ID); err != nil {
 		return err
 	}
 
-	// Invalidate cache for this user's configuration
+	// Invalida o cache para a configuração deste usuário
 	cacheKey := cache.GenerateConfigurationCacheKey(configuration.UserID.String())
 	if err := c.cacheService.Delete(ctx, cacheKey); err != nil {
 		c.logger.Warn("Failed to invalidate configuration cache after deletion",
