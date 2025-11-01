@@ -30,8 +30,10 @@ type DatabaseConfig struct {
 
 // RedisConfig holds Redis configuration
 type RedisConfig struct {
+	PublicURL         string
 	Host              string
 	Port              string
+	Username          string
 	Password          string
 	DB                string
 	MaxMemory         string
@@ -89,8 +91,10 @@ func LoadConfig() *Config {
 			SSLMode:  os.Getenv("DB_SSL_MODE"),
 		},
 		Redis: RedisConfig{
+			PublicURL:         os.Getenv("REDIS_PUBLIC_URL"),
 			Host:              os.Getenv("REDIS_HOST"),
 			Port:              os.Getenv("REDIS_PORT"),
+			Username:          os.Getenv("REDIS_USERNAME"),
 			Password:          os.Getenv("REDIS_PASSWORD"),
 			DB:                os.Getenv("REDIS_DB"),
 			MaxMemory:         os.Getenv("REDIS_MAX_MEMORY"),
