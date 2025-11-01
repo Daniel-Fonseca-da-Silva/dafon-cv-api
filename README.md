@@ -442,8 +442,12 @@ MYSQL_USER=your_mysql_user
 MYSQL_PASSWORD=your_mysql_password
 
 # Redis Configuration (Cache + Rate Limiting)
+# Option 1: Use REDIS_PUBLIC_URL (recommended for cloud providers like Railway)
+REDIS_PUBLIC_URL=redis://default:password@host:port
+# Option 2: Use individual variables (fallback)
 REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_PORT=
+REDIS_USERNAME=
 REDIS_PASSWORD=
 REDIS_DB=0
 
@@ -632,7 +636,7 @@ docker compose logs -f redis
 | **429 Too Many Requests** | Rate limit exceeded | Check rate limiting configuration |
 | **OpenAI Errors** | AI generation fails | Check `OPENAI_API_KEY` and quota |
 | **Database Connection** | Connection refused | Verify `DB_HOST`, `DB_PORT`, credentials |
-| **Redis Connection** | Redis connection failed | Verify `REDIS_HOST`, `REDIS_PORT` |
+| **Redis Connection** | Redis connection failed | Verify `REDIS_PUBLIC_URL` or `REDIS_HOST`, `REDIS_PORT` |
 | **Cache Issues** | Slow responses, stale data | Check Redis connection, clear cache if needed |
 | **Email Service** | Email sending fails | Check `RESEND_API_KEY` and `MAIL_FROM` |
 
@@ -726,8 +730,12 @@ The application implements a comprehensive Redis-based caching system to optimiz
 #### **Redis Configuration**
 ```bash
 # Redis connection settings
+# Option 1: Use REDIS_PUBLIC_URL (recommended for cloud providers like Railway)
+REDIS_PUBLIC_URL=redis://default:password@host:port
+# Option 2: Use individual variables (fallback)
 REDIS_HOST=
 REDIS_PORT=
+REDIS_USERNAME=
 REDIS_PASSWORD=
 REDIS_DB=
 ```

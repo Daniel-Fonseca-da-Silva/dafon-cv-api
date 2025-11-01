@@ -94,7 +94,7 @@ func LoadConfig() *Config {
 			PublicURL:         os.Getenv("REDIS_PUBLIC_URL"),
 			Host:              os.Getenv("REDIS_HOST"),
 			Port:              os.Getenv("REDIS_PORT"),
-			Username:          os.Getenv("REDIS_USERNAME"),
+			Username:          os.Getenv("REDISUSER"),
 			Password:          os.Getenv("REDIS_PASSWORD"),
 			DB:                os.Getenv("REDIS_DB"),
 			MaxMemory:         os.Getenv("REDIS_MAX_MEMORY"),
