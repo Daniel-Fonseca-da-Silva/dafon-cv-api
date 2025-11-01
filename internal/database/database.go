@@ -41,9 +41,18 @@ func Connect(cfg *config.Config, log *zap.Logger) error {
 
 // AutoMigrate runs database migrations
 func AutoMigrate(log *zap.Logger) error {
+	// Temporarily disable SQL logging during migrations to avoid cluttering logs
+	originalLogger := DB.Config.Logger
+	DB.Config.Logger = logger.Default.LogMode(logger.Silent)
+
 	if err := DB.AutoMigrate(&models.User{}, &models.Curriculums{}, &models.Work{}, &models.Configuration{}, &models.Session{}, &models.Education{}); err != nil {
+		// Restore original logger before returning error
+		DB.Config.Logger = originalLogger
 		return errors.WrapError(err, "failed to run migrations")
 	}
+
+	// Restore original logger after migrations
+	DB.Config.Logger = originalLogger
 
 	log.Info("Database migrations completed successfully")
 	return nil
