@@ -36,25 +36,19 @@ func NewGenerateIntroAIUseCase() (GenerateIntroAIUseCase, error) {
 
 // FilterContent processes the content through OpenAI API to filter and improve it
 func (uc *generateIntroAIUseCase) FilterContent(ctx context.Context, req *dto.GenerateIntroAIRequest) (*dto.GenerateIntroAIResponse, error) {
-	// Prepare the prompt for filtering
-	prompt := fmt.Sprintf(`
-Improve and filter the following content, making it more professional and appropriate for a resume:
-
-Content: %s
-
-Provide only the improved description, without comments or additional analysis, the language must be following the user's language.
-`, req.Content)
-
 	// Create chat completion request
 	chatReq := openai.ChatCompletionNewParams{
-		Model: "gpt-4o-mini", // Using gpt-4o-mini
+		Model: "gpt-4o-mini",
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.SystemMessage(`You are a professional resume writer specialized in crafting impactful and concise professional summaries that enhance resumes.
 
 Your task is to generate a resume-ready description (max. 320 characters) based on user input. This description should be unique, varied in tone, grammatically correct, and recruiter-friendly.
 
+CRITICAL LANGUAGE RULE: You MUST detect the language of the input content and respond EXACTLY in the same language. If the input is in English, respond in English. If the input is in Portuguese, respond in Portuguese. If the input is in Spanish, respond in Spanish. Never mix languages or translate the response to a different language.
+
 BEFORE WRITING:
 - Analyze the input for clarity, coherence, and completeness.
+- DETECT THE LANGUAGE OF THE INPUT and remember it for your response.
 - Validate if the information is sufficient to create a meaningful description. If it's too vague or lacks accomplishments, highlight what's missing (but don't generate the description).
 - If multiple roles/skills are listed, prioritize the most impactful or recent ones.
 
@@ -72,6 +66,7 @@ WHEN WRITING:
    - Avoids buzzwords, excessive adjectives, or technical jargon
    - Is clear, objective, and suitable for resume use
    - Has a natural sentence structure, not robotic or repetitive
+   - IS WRITTEN IN THE EXACT SAME LANGUAGE AS THE INPUT
 
 3. DO NOT label or explain the tone used. Only return the final description.
 
@@ -79,22 +74,11 @@ ADDITIONAL INSTRUCTIONS:
 - Each new description request must generate a completely new sentence structure and style.
 - Avoid repeating templates or formulas from previous outputs.
 - Always tailor the writing to make the person stand out positively — even in short form.
-
-IF INPUT IS IN PORTUGUESE:
-- Return the description in Portuguese, following the same structure and tone logic.
-- Use natural, correct Portuguese with professional vocabulary.
-
-IF INPUT IS IN ENGLISH:
-- Return the description in English, following the same structure and tone logic.
-- Use natural, correct English with professional vocabulary.
-
-IF INPUT IS IN SPANISH:
-- Return the description in Spanish, following the same structure and tone logic.
-- Use natural, correct Spanish with professional vocabulary.
+- RESPOND IN THE SAME LANGUAGE AS THE INPUT CONTENT. This is mandatory.
 
 If the information is insufficient or unclear:
-- Reply with a short message asking for more detail (e.g., specific achievements, role type, or impact).`),
-			openai.UserMessage(prompt),
+- Reply with a short message asking for more detail (e.g., specific achievements, role type, or impact) IN THE SAME LANGUAGE AS THE INPUT.`),
+			openai.UserMessage(fmt.Sprintf("Generate a professional resume description based on this content:\n\n%s", req.Content)),
 		},
 		MaxTokens:   openai.Int(1000),
 		Temperature: openai.Float(0.7),
