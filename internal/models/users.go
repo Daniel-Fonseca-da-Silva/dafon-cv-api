@@ -20,6 +20,7 @@ type User struct {
 	Age           int            `json:"age,omitempty" gorm:"default:0"`
 	Salary        float64        `json:"salary,omitempty" gorm:"type:double;default:0"`
 	Migration     bool           `json:"migration,omitempty" gorm:"not null;default:false"`
+	Admin         bool           `json:"admin,omitempty" gorm:"default:false"`
 	Curriculums   []Curriculums  `json:"curriculums,omitempty" gorm:"foreignKey:UserID"`
 	Configuration *Configuration `json:"configuration,omitempty" gorm:"foreignKey:UserID"`
 	Sessions      []Session      `json:"sessions,omitempty" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`

@@ -27,6 +27,7 @@ type UpdateUserRequest struct {
 	Age        *int     `json:"age" binding:"omitempty,min=0"`
 	Salary     *float64 `json:"salary" binding:"omitempty"`
 	Migration  *bool    `json:"migration" binding:"omitempty"`
+	Admin      *bool    `json:"admin" binding:"omitempty"`
 }
 
 // UserResponse represents the response structure for user data
@@ -44,6 +45,7 @@ type UserResponse struct {
 	Age        int       `json:"age,omitempty"`
 	Salary     float64   `json:"salary,omitempty"`
 	Migration  bool      `json:"migration,omitempty"`
+	Admin      bool      `json:"admin,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
