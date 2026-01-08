@@ -8,21 +8,23 @@ import (
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
+	"github.com/google/uuid"
 	"github.com/openai/openai-go"
 )
 
 // GenerateAnalyzeAIUseCase defines the interface for AI filtering operations
 type GenerateAnalyzeAIUseCase interface {
-	FilterContent(ctx context.Context, req *dto.GenerateAnalyzeAIRequest) (*dto.GenerateAnalyzeAIResponse, error)
+	FilterContent(ctx context.Context, curriculumID uuid.UUID) (*dto.GenerateAnalyzeAIResponse, error)
 }
 
 // generateAnalyzeAIUseCase implements GenerateAnalyzeAIUseCase interface
 type generateAnalyzeAIUseCase struct {
-	openaiClient *openai.Client
+	openaiClient      *openai.Client
+	curriculumUseCase CurriculumUseCase
 }
 
 // NewGenerateAnalyzeAIUseCase creates a new instance of GenerateAnalyzeAIUseCase
-func NewGenerateAnalyzeAIUseCase() (GenerateAnalyzeAIUseCase, error) {
+func NewGenerateAnalyzeAIUseCase(curriculumUseCase CurriculumUseCase) (GenerateAnalyzeAIUseCase, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
@@ -31,13 +33,20 @@ func NewGenerateAnalyzeAIUseCase() (GenerateAnalyzeAIUseCase, error) {
 	client := openai.NewClient()
 
 	return &generateAnalyzeAIUseCase{
-		openaiClient: &client,
+		openaiClient:      &client,
+		curriculumUseCase: curriculumUseCase,
 	}, nil
 }
 
 // FilterContent processes the curriculum content through OpenAI API to provide comprehensive analysis
-func (uc *generateAnalyzeAIUseCase) FilterContent(ctx context.Context, req *dto.GenerateAnalyzeAIRequest) (*dto.GenerateAnalyzeAIResponse, error) {
-	// Prepare the prompt for curriculum analysis
+func (uc *generateAnalyzeAIUseCase) FilterContent(ctx context.Context, curriculumID uuid.UUID) (*dto.GenerateAnalyzeAIResponse, error) {
+	// Get curriculum body using the existing method from CurriculumUseCase
+	curriculumBody, err := uc.curriculumUseCase.GetCurriculumBody(ctx, curriculumID)
+	if err != nil {
+		return nil, errors.WrapError(err, "failed to get curriculum body")
+	}
+
+	// Prepare the prompt for curriculum analysis using the fetched body
 	prompt := fmt.Sprintf(`
 Analyze the following curriculum text and provide a comprehensive professional analysis. The curriculum contains personal information, experience, skills, and academic background.
 
@@ -63,7 +72,7 @@ STRICT RULES:
 - Output must be valid JSON only (no markdown, no backticks, no extra text)
 - Keep responses concise and professional
 - Use the same language as the input text
-`, req.Content)
+`, curriculumBody.Body)
 
 	// Create chat completion request
 	chatReq := openai.ChatCompletionNewParams{

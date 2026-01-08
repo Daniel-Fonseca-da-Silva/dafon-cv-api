@@ -51,7 +51,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	SetupEmailRoutes(router, logger, cfg)
 
 	// Setup generate analyze AI routes
-	SetupGenerateAnalyzeAIRoutes(router, logger, cfg)
+	SetupGenerateAnalyzeAIRoutes(router, db, logger, cfg)
 
 	// Setup generate translation AI routes
 	SetupGenerateTranslationAIRoutes(router, logger, cfg)
