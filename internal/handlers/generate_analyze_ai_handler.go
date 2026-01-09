@@ -31,7 +31,21 @@ func (h *GenerateAnalyzeAIHandler) FilterContent(c *gin.Context) {
 		return
 	}
 
-	aiResponse, err := h.generateAnalyzeAIUseCase.FilterContent(c.Request.Context(), curriculumID)
+	// Get language parameter from query string (default: "pt")
+	language := c.DefaultQuery("lang", "pt")
+	
+	// Validate language code
+	validLanguages := map[string]bool{
+		"pt": true,
+		"en": true,
+		"es": true,
+	}
+	if !validLanguages[language] {
+		transporthttp.HandleValidationError(c, errors.NewAppError("invalid language code. Supported: pt, en, es"))
+		return
+	}
+
+	aiResponse, err := h.generateAnalyzeAIUseCase.FilterContent(c.Request.Context(), curriculumID, language)
 	if err != nil {
 		transporthttp.HandleValidationError(c, err)
 		return

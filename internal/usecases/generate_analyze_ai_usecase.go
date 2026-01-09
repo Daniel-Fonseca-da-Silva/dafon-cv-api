@@ -14,7 +14,7 @@ import (
 
 // GenerateAnalyzeAIUseCase defines the interface for AI filtering operations
 type GenerateAnalyzeAIUseCase interface {
-	FilterContent(ctx context.Context, curriculumID uuid.UUID) (*dto.GenerateAnalyzeAIResponse, error)
+	FilterContent(ctx context.Context, curriculumID uuid.UUID, language string) (*dto.GenerateAnalyzeAIResponse, error)
 }
 
 // generateAnalyzeAIUseCase implements GenerateAnalyzeAIUseCase interface
@@ -38,12 +38,22 @@ func NewGenerateAnalyzeAIUseCase(curriculumUseCase CurriculumUseCase) (GenerateA
 	}, nil
 }
 
-// FilterContent processes the curriculum content through OpenAI API to provide comprehensive analysis
-func (uc *generateAnalyzeAIUseCase) FilterContent(ctx context.Context, curriculumID uuid.UUID) (*dto.GenerateAnalyzeAIResponse, error) {
+func (uc *generateAnalyzeAIUseCase) FilterContent(ctx context.Context, curriculumID uuid.UUID, language string) (*dto.GenerateAnalyzeAIResponse, error) {
 	// Get curriculum body using the existing method from CurriculumUseCase
 	curriculumBody, err := uc.curriculumUseCase.GetCurriculumBody(ctx, curriculumID)
 	if err != nil {
 		return nil, errors.WrapError(err, "failed to get curriculum body")
+	}
+
+	// Map language code to full language name for the prompt
+	languageMap := map[string]string{
+		"pt": "português",
+		"en": "english",
+		"es": "español",
+	}
+	languageName := languageMap[language]
+	if languageName == "" {
+		languageName = "english" // default fallback
 	}
 
 	// Prepare the prompt for curriculum analysis using the fetched body
@@ -52,7 +62,9 @@ Analyze the following curriculum text and provide a comprehensive professional a
 
 Curriculum Text: %s
 
-Return ONLY a strict JSON object in the same language as the input, with this exact structure and keys:
+IMPORTANT: You MUST respond in %s language. All fields in the JSON response must be in %s.
+
+Return ONLY a strict JSON object in %s language, with this exact structure and keys:
 {
   "score": number, // 0-100 numeric score (can be decimal like 75.5)
   "description": string, // brief professional summary of the overall assessment
@@ -71,14 +83,14 @@ Return ONLY a strict JSON object in the same language as the input, with this ex
 STRICT RULES:
 - Output must be valid JSON only (no markdown, no backticks, no extra text)
 - Keep responses concise and professional
-- Use the same language as the input text
-`, curriculumBody.Body)
+- ALL content must be in %s language
+`, curriculumBody.Body, languageName, languageName, languageName, languageName)
 
 	// Create chat completion request
 	chatReq := openai.ChatCompletionNewParams{
 		Model: "gpt-4o-mini", // Using gpt-4o-mini
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(`You are a professional career consultant and resume expert with extensive experience in HR, recruitment, and career development. You specialize in analyzing curricula and providing comprehensive feedback to help professionals improve their job application success.
+			openai.SystemMessage(fmt.Sprintf(`You are a professional career consultant and resume expert with extensive experience in HR, recruitment, and career development. You specialize in analyzing curricula and providing comprehensive feedback to help professionals improve their job application success.
 
 Your expertise includes:
 - Modern resume best practices and industry standards
@@ -133,15 +145,16 @@ When analyzing a curriculum, you should:
 7. **Actionable Recommendations**: Provide specific, implementable steps for improvement.
 
 LANGUAGE AND FORMATTING REQUIREMENTS:
-- Always respond in the same language as the input text
+- You MUST respond in %s language
 - Use professional, clear, and constructive language
 - Maintain a supportive and encouraging tone
 - Provide specific, actionable advice
 - Be honest but diplomatic in your assessment
 - Respond with strict JSON only, matching the requested schema
 - Do not include markdown, code fences, or additional text outside JSON
+- ALL fields, descriptions, and recommendations must be in %s language
 
-Your goal is to help the person improve their curriculum and increase their chances of success in the job market.`),
+Your goal is to help the person improve their curriculum and increase their chances of success in the job market.`, languageName, languageName)),
 			openai.UserMessage(prompt),
 		},
 		MaxTokens:   openai.Int(2000),
