@@ -27,6 +27,9 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup user routes
 	SetupUserRoutes(router, db, logger, cfg)
 
+	// Setup admin (back office) routes
+	SetupAdminRoutes(router, db, logger, cfg)
+
 	// Setup curriculum routes
 	SetupCurriculumRoutes(router, db, logger, cfg)
 
