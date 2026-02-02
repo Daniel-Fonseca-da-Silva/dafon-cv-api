@@ -90,6 +90,7 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 		Age:        user.Age,
 		Salary:     user.Salary,
 		Migration:  user.Migration,
+		Admin:      user.Admin,
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}, nil
@@ -133,6 +134,7 @@ func (uc *userUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.User
 		Age:        user.Age,
 		Salary:     user.Salary,
 		Migration:  user.Migration,
+		Admin:      user.Admin,
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}
@@ -177,6 +179,7 @@ func (uc *userUseCase) GetAllUsers(ctx context.Context) (*dto.UsersResponse, err
 			Age:        user.Age,
 			Salary:     user.Salary,
 			Migration:  user.Migration,
+			Admin:      user.Admin,
 			CreatedAt:  user.CreatedAt,
 			UpdatedAt:  user.UpdatedAt,
 		}
@@ -272,6 +275,7 @@ func (uc *userUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.Up
 		Age:        user.Age,
 		Salary:     user.Salary,
 		Migration:  user.Migration,
+		Admin:      user.Admin,
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}, nil

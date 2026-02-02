@@ -16,7 +16,10 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	GetAll(ctx context.Context) ([]models.User, error)
+	GetWithPagination(ctx context.Context, page, pageSize int) ([]models.User, error)
+	Count(ctx context.Context) (int64, error)
 	Update(ctx context.Context, user *models.User) error
+	ToggleAdmin(ctx context.Context, id uuid.UUID) (*models.User, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -76,6 +79,29 @@ func (r *userRepository) GetAll(ctx context.Context) ([]models.User, error) {
 	return users, nil
 }
 
+// GetWithPagination retrieves users with pagination
+func (r *userRepository) GetWithPagination(ctx context.Context, page, pageSize int) ([]models.User, error) {
+	var users []models.User
+	offset := (page - 1) * pageSize
+	err := r.db.WithContext(ctx).Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&users).Error
+	if err != nil {
+		r.logger.Error("Failed to get users with pagination", zap.Error(err))
+		return nil, fmt.Errorf("failed to get users: %w", err)
+	}
+	return users, nil
+}
+
+// Count returns total number of users
+func (r *userRepository) Count(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error
+	if err != nil {
+		r.logger.Error("Failed to count users", zap.Error(err))
+		return 0, fmt.Errorf("failed to count users: %w", err)
+	}
+	return count, nil
+}
+
 // Update updates an existing user in the database
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
@@ -83,6 +109,20 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 	return nil
+}
+
+// ToggleAdmin flips the Admin field for a user and returns the updated user
+func (r *userRepository) ToggleAdmin(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	user, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	user.Admin = !user.Admin
+	if err := r.db.WithContext(ctx).Model(user).Update("admin", user.Admin).Error; err != nil {
+		r.logger.Error("Failed to toggle admin", zap.Error(err), zap.String("user_id", id.String()))
+		return nil, fmt.Errorf("failed to toggle admin: %w", err)
+	}
+	return user, nil
 }
 
 // Delete removes a user from the database
