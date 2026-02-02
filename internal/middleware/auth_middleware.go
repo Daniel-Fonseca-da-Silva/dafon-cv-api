@@ -4,8 +4,10 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	transporthttp "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/transport/http"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // StaticTokenMiddleware validates static token from environment variable
@@ -43,6 +45,36 @@ func StaticTokenMiddleware(staticToken string) gin.HandlerFunc {
 		}
 
 		// Token is valid, proceed to the next handler
+		c.Next()
+	}
+}
+
+// AdminMiddleware validates X-User-ID header and ensures the user exists and has Admin=true
+func AdminMiddleware(userRepo repositories.UserRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userIDStr := c.GetHeader("X-User-ID")
+		if userIDStr == "" {
+			c.AbortWithStatusJSON(401, gin.H{"error": "X-User-ID header required"})
+			return
+		}
+
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			c.AbortWithStatusJSON(400, gin.H{"error": "invalid user ID format"})
+			return
+		}
+
+		user, err := userRepo.GetByID(c.Request.Context(), userID)
+		if err != nil || user == nil {
+			c.AbortWithStatusJSON(404, gin.H{"error": "user not found"})
+			return
+		}
+
+		if !user.Admin {
+			c.AbortWithStatusJSON(403, gin.H{"error": "admin access required"})
+			return
+		}
+
 		c.Next()
 	}
 }
