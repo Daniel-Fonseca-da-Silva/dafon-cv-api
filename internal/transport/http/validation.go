@@ -1,12 +1,14 @@
 package transporthttp
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 )
 
 type ValidationError struct {
@@ -26,6 +28,19 @@ func HandleValidationError(c *gin.Context, err error) {
 		return
 	}
 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+}
+
+// HandleUseCaseError writes the appropriate HTTP status and body for use-case errors:
+// 404 when the error is gorm.ErrRecordNotFound, 500 otherwise.
+func HandleUseCaseError(c *gin.Context, err error, notFoundMessage string) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": notFoundMessage})
+		return
+	}
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 }
 
 func ValidatePasswordAndReturnError(c *gin.Context, password string) bool {

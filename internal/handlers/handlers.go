@@ -27,7 +27,15 @@ func (h *HealthCheckHandler) HealthCheck(c *gin.Context) {
 
 	// Check Redis health
 	redisHealth := h.checkRedisHealth()
-	redisHealthy := redisHealth["healthy"].(bool)
+	redisHealthy, ok := redisHealth["healthy"].(bool)
+	if !ok {
+		redisHealthy = false
+		if h.logger != nil {
+			h.logger.Error("Redis health response missing boolean 'healthy' field",
+				zap.String("path", c.FullPath()),
+			)
+		}
+	}
 
 	// Calculate response time
 	responseTime := time.Since(startTime)
@@ -62,6 +70,11 @@ func (h *HealthCheckHandler) HealthCheck(c *gin.Context) {
 				"memory_used":       redisInfo["used_memory_human"],
 				"connected_clients": redisInfo["connected_clients"],
 			}
+		} else if h.logger != nil {
+			h.logger.Warn("Failed to get Redis info",
+				zap.String("path", c.FullPath()),
+				zap.Error(err),
+			)
 		}
 	}
 
