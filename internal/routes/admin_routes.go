@@ -16,11 +16,13 @@ func SetupAdminRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *
 	userRepo := repositories.NewUserRepository(db, logger)
 	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
 	adminUseCase := usecases.NewAdminUseCase(userRepo, curriculumRepo, logger)
-	adminHandler := handlers.NewAdminHandler(adminUseCase)
+	adminHandler := handlers.NewAdminHandler(adminUseCase, logger)
 
-	admin := router.Group("/api/v1/admin")
-	admin.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	admin.Use(middleware.AdminMiddleware(userRepo))
+	admin := router.Group(
+		"/api/v1/admin",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		middleware.AdminMiddleware(userRepo),
+	)
 	{
 		admin.GET("/dashboard", adminHandler.GetDashboard)
 

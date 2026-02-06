@@ -27,10 +27,9 @@ func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, 
 	configurationRepo := repositories.NewConfigurationRepository(db, logger)
 	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, cacheService, logger)
 
-	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase)
+	curriculumHandler := handlers.NewCurriculumHandler(curriculumUseCase, userUseCase, logger)
 
-	curriculums := router.Group("/api/v1/curriculums")
-	curriculums.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+	curriculums := router.Group("/api/v1/curriculums", middleware.StaticTokenMiddleware(cfg.App.StaticToken))
 
 	{
 		curriculums.POST("", curriculumHandler.CreateCurriculum)

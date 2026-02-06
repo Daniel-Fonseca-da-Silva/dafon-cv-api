@@ -19,13 +19,15 @@ func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cf
 		return
 	}
 
-	generateTranslationAIHandler := handlers.NewGenerateTranslationAIHandler(generateTranslationAIUseCase)
+	generateTranslationAIHandler := handlers.NewGenerateTranslationAIHandler(generateTranslationAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateTranslations := router.Group("/api/v1/generate-translation-ai")
-	generateTranslations.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateTranslations.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateTranslations := router.Group(
+		"/api/v1/generate-translation-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateTranslations.POST("", generateTranslationAIHandler.FilterContent)
 	}

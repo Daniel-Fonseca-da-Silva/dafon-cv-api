@@ -19,13 +19,15 @@ func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *c
 		return
 	}
 
-	generateAnalyzeAIHandler := handlers.NewGenerateAnalyzeAIHandler(generateAnalyzeAIUseCase)
+	generateAnalyzeAIHandler := handlers.NewGenerateAnalyzeAIHandler(generateAnalyzeAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateAnalyze := router.Group("/api/v1/generate-analyze-ai")
-	generateAnalyze.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateAnalyze.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateAnalyze := router.Group(
+		"/api/v1/generate-analyze-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateAnalyze.POST("", generateAnalyzeAIHandler.FilterContent)
 	}

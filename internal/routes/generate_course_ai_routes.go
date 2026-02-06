@@ -19,13 +19,15 @@ func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *c
 		return
 	}
 
-	generateCoursesAIHandler := handlers.NewGenerateCoursesAIHandler(generateCoursesAIUseCase)
+	generateCoursesAIHandler := handlers.NewGenerateCoursesAIHandler(generateCoursesAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateCourses := router.Group("/api/v1/generate-courses-ai")
-	generateCourses.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateCourses.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateCourses := router.Group(
+		"/api/v1/generate-courses-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateCourses.POST("", generateCoursesAIHandler.FilterContent)
 	}

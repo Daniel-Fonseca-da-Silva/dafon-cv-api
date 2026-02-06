@@ -13,6 +13,13 @@ type RegisterRequest struct {
 	ImageURL *string `json:"image_url" binding:"omitempty,url"`
 }
 
+// CreateUserRequest is the documented request for POST /user (required fields only).
+// The API also accepts optional image_url; see RegisterRequest.
+type CreateUserRequest struct {
+	Name  string `json:"name" binding:"required,min=10,max=100" example:"John Doe"`
+	Email string `json:"email" binding:"required,email" example:"john@example.com"`
+}
+
 // UpdateUserRequest represents the request structure for updating a user
 type UpdateUserRequest struct {
 	Name       string   `json:"name" binding:"omitempty,min=10,max=100"`

@@ -19,14 +19,16 @@ func SetupGenerateIntroAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *con
 		return
 	}
 
-	generateIntroAIHandler := handlers.NewGenerateIntroAIHandler(generateIntroAIUseCase)
+	generateIntroAIHandler := handlers.NewGenerateIntroAIHandler(generateIntroAIUseCase, logger)
 
 	// Create stricter rate limiter for AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateIntros := router.Group("/api/v1/generate-intro-ai")
-	generateIntros.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateIntros.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateIntros := router.Group(
+		"/api/v1/generate-intro-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 
 	{
 		generateIntros.POST("", generateIntroAIHandler.FilterContent)

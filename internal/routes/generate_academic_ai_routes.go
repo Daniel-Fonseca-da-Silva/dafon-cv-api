@@ -19,13 +19,15 @@ func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *
 		return
 	}
 
-	generateAcademicAIHandler := handlers.NewGenerateAcademicAIHandler(generateAcademicAIUseCase)
+	generateAcademicAIHandler := handlers.NewGenerateAcademicAIHandler(generateAcademicAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateAcademic := router.Group("/api/v1/generate-academic-ai")
-	generateAcademic.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateAcademic.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateAcademic := router.Group(
+		"/api/v1/generate-academic-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateAcademic.POST("", generateAcademicAIHandler.FilterContent)
 	}

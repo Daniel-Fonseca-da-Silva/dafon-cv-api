@@ -21,8 +21,7 @@ func SetupEmailRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config
 	emailHandler := handlers.NewEmailHandler(emailUseCase, logger)
 
 	// Protected email routes (authentication required)
-	email := router.Group("/api/v1/send-email")
-	email.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+	email := router.Group("/api/v1/send-email", middleware.StaticTokenMiddleware(cfg.App.StaticToken))
 	{
 		email.POST("", emailHandler.SendEmail)
 	}

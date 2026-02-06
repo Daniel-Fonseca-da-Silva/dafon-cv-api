@@ -19,13 +19,15 @@ func SetupGenerateTaskAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *conf
 		return
 	}
 
-	generateTaskAIHandler := handlers.NewGenerateTaskAIHandler(generateTaskAIUseCase)
+	generateTaskAIHandler := handlers.NewGenerateTaskAIHandler(generateTaskAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateTasks := router.Group("/api/v1/generate-task-ai")
-	generateTasks.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateTasks.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateTasks := router.Group(
+		"/api/v1/generate-task-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateTasks.POST("", generateTaskAIHandler.FilterContent)
 	}

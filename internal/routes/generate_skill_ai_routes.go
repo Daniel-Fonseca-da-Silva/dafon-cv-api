@@ -19,13 +19,15 @@ func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *con
 		return
 	}
 
-	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase)
+	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateSkill := router.Group("/api/v1/generate-skill-ai")
-	generateSkill.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateSkill.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateSkill := router.Group(
+		"/api/v1/generate-skill-ai",
+		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateSkill.POST("", generateSkillAIHandler.FilterContent)
 	}

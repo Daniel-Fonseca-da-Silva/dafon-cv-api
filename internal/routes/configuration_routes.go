@@ -20,11 +20,10 @@ func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logge
 	// Initialize configuration dependencies
 	configurationRepo := repositories.NewConfigurationRepository(db, logger)
 	configurationUseCase := usecases.NewConfigurationUseCase(configurationRepo, cacheService, logger)
-	configurationHandler := handlers.NewConfigurationHandler(configurationUseCase)
+	configurationHandler := handlers.NewConfigurationHandler(configurationUseCase, logger)
 
 	// Configuration routes group (protected with authentication)
-	configuration := router.Group("/api/v1/configuration")
-	configuration.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+	configuration := router.Group("/api/v1/configuration", middleware.StaticTokenMiddleware(cfg.App.StaticToken))
 
 	{
 		configuration.GET("/:user_id", configurationHandler.GetConfigurationByUserID)
