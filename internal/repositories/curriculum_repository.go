@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
 	"github.com/google/uuid"
@@ -9,139 +10,163 @@ import (
 	"gorm.io/gorm"
 )
 
-// CurriculumRepository Define a interface para operações de dados de curriculum
+// CurriculumRepository defines the interface for curriculum data operations.
 type CurriculumRepository interface {
 	Create(ctx context.Context, curriculum *models.Curriculums) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error)
-	GetAll(ctx context.Context, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error)
-	GetAllByUserID(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error)
+	GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.Curriculums, bool, error)
+	GetPageAfterIDByUserID(ctx context.Context, userID uuid.UUID, afterID *uuid.UUID, limit int) ([]models.Curriculums, bool, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID) (*models.Curriculums, error)
 	Count(ctx context.Context) (int64, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
-// curriculumRepository Implementa a interface CurriculumRepository
+// curriculumRepository implements CurriculumRepository.
 type curriculumRepository struct {
 	db     *gorm.DB
 	logger *zap.Logger
 }
 
-// NewCurriculumRepository Cria uma nova instância de CurriculumRepository
+// NewCurriculumRepository creates a new CurriculumRepository.
 func NewCurriculumRepository(db *gorm.DB, logger *zap.Logger) CurriculumRepository {
 	return &curriculumRepository{db: db, logger: logger}
 }
 
-// Create Cria um novo curriculum no banco de dados
+// Create persists a new curriculum and its relations atomically.
 func (cu *curriculumRepository) Create(ctx context.Context, curriculum *models.Curriculums) error {
-	// Usar transaction para garantir atomicidade quando criar curriculum com works
-	return cu.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return tx.Create(curriculum).Error
+	err := cu.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(curriculum).Error; err != nil {
+			return err
+		}
+		return nil
 	})
+	if err != nil {
+		cu.logger.Error("Failed to create curriculum",
+			zap.Error(err),
+			zap.String("curriculum_id", curriculum.ID.String()),
+		)
+		return fmt.Errorf("failed to create curriculum: %w", err)
+	}
+	return nil
 }
 
-// GetByID Recupera um curriculum por ID
+// GetByID retrieves a curriculum by ID.
 func (cu *curriculumRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Curriculums, error) {
 	var curriculum models.Curriculums
 	err := cu.db.WithContext(ctx).Preload("Works").Preload("Educations").Where("id = ?", id).First(&curriculum).Error
-	return &curriculum, err
+	if err != nil {
+		cu.logger.Error("Failed to get curriculum by ID",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()),
+		)
+		return nil, fmt.Errorf("failed to get curriculum by ID %s: %w", id.String(), err)
+	}
+	return &curriculum, nil
 }
 
-// GetAll Recupera todos os curriculums paginados com works e educations
-func (cu *curriculumRepository) GetAll(ctx context.Context, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error) {
+// GetPageAfterID retrieves curriculums using cursor-based pagination.
+// It orders by ID ascending and returns at most limit curriculums.
+// The returned boolean indicates whether there is a next page.
+func (cu *curriculumRepository) GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.Curriculums, bool, error) {
 	var curriculums []models.Curriculums
 
-	// Calcular offset para paginação
-	offset := (page - 1) * pageSize
-
-	// Validar e definir campos de ordenação permitidos
-	allowedSortFields := map[string]bool{
-		"created_at": true,
-		"updated_at": true,
-		"full_name":  true,
-		"email":      true,
+	if limit < 1 {
+		return []models.Curriculums{}, false, nil
 	}
 
-	// Definir campo de ordenação padrão se não especificado ou inválido
-	if sortBy == "" || !allowedSortFields[sortBy] {
-		sortBy = "created_at"
-	}
-
-	// Validar direção de ordenação
-	if sortOrder != "ASC" && sortOrder != "DESC" {
-		sortOrder = "DESC"
-	}
-
-	// Construir string de ordenação
-	orderClause := sortBy + " " + sortOrder
-
-	// Buscar curriculums com paginação e preload das relações
-	err := cu.db.WithContext(ctx).
+	query := cu.db.WithContext(ctx).
 		Preload("Works").
 		Preload("Educations").
-		Offset(offset).
-		Limit(pageSize).
-		Order(orderClause).
-		Find(&curriculums).Error
+		Model(&models.Curriculums{})
 
-	return curriculums, err
+	if afterID != nil && *afterID != uuid.Nil {
+		query = query.Where("id > ?", afterID.String())
+	}
+
+	err := query.Order("id ASC").Limit(limit + 1).Find(&curriculums).Error
+	if err != nil {
+		cu.logger.Error("Failed to get curriculums with cursor pagination", zap.Error(err))
+		return nil, false, fmt.Errorf("failed to get curriculums: %w", err)
+	}
+
+	hasNextPage := len(curriculums) > limit
+	if hasNextPage {
+		curriculums = curriculums[:limit]
+	}
+
+	return curriculums, hasNextPage, nil
 }
 
-// GetAllByUserID Recupera todos os curriculums paginados de um usuário específico com works e educations
-func (cu *curriculumRepository) GetAllByUserID(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]models.Curriculums, error) {
+// GetPageAfterIDByUserID retrieves curriculums for a given user using cursor-based pagination.
+// It orders by ID ascending and returns at most limit curriculums.
+// The returned boolean indicates whether there is a next page.
+func (cu *curriculumRepository) GetPageAfterIDByUserID(ctx context.Context, userID uuid.UUID, afterID *uuid.UUID, limit int) ([]models.Curriculums, bool, error) {
 	var curriculums []models.Curriculums
 
-	// Calcular offset para paginação
-	offset := (page - 1) * pageSize
-
-	// Validar e definir campos de ordenação permitidos
-	allowedSortFields := map[string]bool{
-		"created_at": true,
-		"updated_at": true,
-		"full_name":  true,
-		"email":      true,
+	if limit < 1 {
+		return []models.Curriculums{}, false, nil
 	}
 
-	// Definir campo de ordenação padrão se não especificado ou inválido
-	if sortBy == "" || !allowedSortFields[sortBy] {
-		sortBy = "created_at"
-	}
-
-	// Validar direção de ordenação
-	if sortOrder != "ASC" && sortOrder != "DESC" {
-		sortOrder = "DESC"
-	}
-
-	// Construir string de ordenação
-	orderClause := sortBy + " " + sortOrder
-
-	// Buscar curriculums do usuário específico com paginação e preload das relações
-	err := cu.db.WithContext(ctx).
+	query := cu.db.WithContext(ctx).
 		Preload("Works").
 		Preload("Educations").
-		Where("user_id = ?", userID).
-		Offset(offset).
-		Limit(pageSize).
-		Order(orderClause).
-		Find(&curriculums).Error
+		Model(&models.Curriculums{}).
+		Where("user_id = ?", userID)
 
-	return curriculums, err
+	if afterID != nil && *afterID != uuid.Nil {
+		query = query.Where("id > ?", afterID.String())
+	}
+
+	err := query.Order("id ASC").Limit(limit + 1).Find(&curriculums).Error
+	if err != nil {
+		cu.logger.Error("Failed to get curriculums by user with cursor pagination",
+			zap.Error(err),
+			zap.String("user_id", userID.String()),
+		)
+		return nil, false, fmt.Errorf("failed to get curriculums by user %s: %w", userID.String(), err)
+	}
+
+	hasNextPage := len(curriculums) > limit
+	if hasNextPage {
+		curriculums = curriculums[:limit]
+	}
+
+	return curriculums, hasNextPage, nil
 }
 
-// GetByUserID Recupera um curriculum por user_id
+// GetByUserID retrieves a curriculum by user ID.
 func (cu *curriculumRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*models.Curriculums, error) {
 	var curriculum models.Curriculums
 	err := cu.db.WithContext(ctx).Preload("Works").Preload("Educations").Where("user_id = ?", userID).First(&curriculum).Error
-	return &curriculum, err
+	if err != nil {
+		cu.logger.Error("Failed to get curriculum by user ID",
+			zap.Error(err),
+			zap.String("user_id", userID.String()),
+		)
+		return nil, fmt.Errorf("failed to get curriculum by user ID %s: %w", userID.String(), err)
+	}
+	return &curriculum, nil
 }
 
-// Count returns total number of curriculums
+// Count returns the total number of curriculums.
 func (cu *curriculumRepository) Count(ctx context.Context) (int64, error) {
 	var count int64
 	err := cu.db.WithContext(ctx).Model(&models.Curriculums{}).Count(&count).Error
-	return count, err
+	if err != nil {
+		cu.logger.Error("Failed to count curriculums", zap.Error(err))
+		return 0, fmt.Errorf("failed to count curriculums: %w", err)
+	}
+	return count, nil
 }
 
-// DeleteCurriculum Deleta um curriculum por ID
+// DeleteCurriculum deletes a curriculum by ID.
 func (cu *curriculumRepository) DeleteCurriculum(ctx context.Context, id uuid.UUID) error {
-	return cu.db.WithContext(ctx).Delete(&models.Curriculums{}, id).Error
+	if err := cu.db.WithContext(ctx).Delete(&models.Curriculums{}, id).Error; err != nil {
+		cu.logger.Error("Failed to delete curriculum",
+			zap.Error(err),
+			zap.String("curriculum_id", id.String()),
+		)
+		return fmt.Errorf("failed to delete curriculum %s: %w", id.String(), err)
+	}
+	return nil
 }

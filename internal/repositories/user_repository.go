@@ -16,7 +16,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	GetAll(ctx context.Context) ([]models.User, error)
-	GetWithPagination(ctx context.Context, page, pageSize int) ([]models.User, error)
+	GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.User, bool, error)
 	Count(ctx context.Context) (int64, error)
 	Update(ctx context.Context, user *models.User) error
 	ToggleAdmin(ctx context.Context, id uuid.UUID) (*models.User, error)
@@ -79,16 +79,34 @@ func (r *userRepository) GetAll(ctx context.Context) ([]models.User, error) {
 	return users, nil
 }
 
-// GetWithPagination retrieves users with pagination
-func (r *userRepository) GetWithPagination(ctx context.Context, page, pageSize int) ([]models.User, error) {
+// GetPageAfterID retrieves users using cursor-based pagination.
+// It orders by ID ascending and returns at most limit users.
+// The returned boolean indicates whether there is a next page.
+func (r *userRepository) GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.User, bool, error) {
 	var users []models.User
-	offset := (page - 1) * pageSize
-	err := r.db.WithContext(ctx).Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&users).Error
-	if err != nil {
-		r.logger.Error("Failed to get users with pagination", zap.Error(err))
-		return nil, fmt.Errorf("failed to get users: %w", err)
+
+	if limit < 1 {
+		return []models.User{}, false, nil
 	}
-	return users, nil
+
+	query := r.db.WithContext(ctx).Model(&models.User{})
+	if afterID != nil && *afterID != uuid.Nil {
+		query = query.Where("id > ?", afterID.String())
+	}
+
+	// Fetch one extra record to determine if there is a next page.
+	err := query.Order("id ASC").Limit(limit + 1).Find(&users).Error
+	if err != nil {
+		r.logger.Error("Failed to get users with cursor pagination", zap.Error(err))
+		return nil, false, fmt.Errorf("failed to get users: %w", err)
+	}
+
+	hasNextPage := len(users) > limit
+	if hasNextPage {
+		users = users[:limit]
+	}
+
+	return users, hasNextPage, nil
 }
 
 // Count returns total number of users

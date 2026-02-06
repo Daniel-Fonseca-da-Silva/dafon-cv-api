@@ -14,10 +14,10 @@ import (
 // AdminUseCase defines the interface for admin (back office) operations
 type AdminUseCase interface {
 	GetDashboard(ctx context.Context) (*dto.DashboardResponse, error)
-	GetUsersWithPagination(ctx context.Context, page, pageSize int) ([]dto.UserResponse, int64, error)
+	GetUsersWithPagination(ctx context.Context, cursor *uuid.UUID, limit int) ([]dto.UserResponse, dto.CursorPagination, error)
 	GetUserDetail(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
 	ToggleAdmin(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
-	GetCurriculumsWithPagination(ctx context.Context, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, int64, error)
+	GetCurriculumsWithPagination(ctx context.Context, cursor *uuid.UUID, limit int) ([]dto.CurriculumResponse, dto.CursorPagination, error)
 	GetCurriculumsStats(ctx context.Context) (*dto.CurriculumsStatsResponse, error)
 	GetUsersStats(ctx context.Context) (*dto.UsersStatsResponse, error)
 }
@@ -57,30 +57,43 @@ func (uc *adminUseCase) GetDashboard(ctx context.Context) (*dto.DashboardRespons
 	}, nil
 }
 
-// GetUsersWithPagination returns paginated users and total count
-func (uc *adminUseCase) GetUsersWithPagination(ctx context.Context, page, pageSize int) ([]dto.UserResponse, int64, error) {
-	total, err := uc.userRepo.Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count users: %w", err)
+// GetUsersWithPagination returns cursor-paginated users.
+func (uc *adminUseCase) GetUsersWithPagination(ctx context.Context, cursor *uuid.UUID, limit int) ([]dto.UserResponse, dto.CursorPagination, error) {
+	if limit < 1 || limit > 100 {
+		limit = 10
 	}
 
-	users, err := uc.userRepo.GetWithPagination(ctx, page, pageSize)
+	users, hasNextPage, err := uc.userRepo.GetPageAfterID(ctx, cursor, limit)
 	if err != nil {
-		return nil, 0, err
+		return nil, dto.CursorPagination{}, fmt.Errorf("get users page: %w", err)
 	}
 
 	responses := make([]dto.UserResponse, len(users))
 	for i, u := range users {
 		responses[i] = userModelToResponse(u)
 	}
-	return responses, total, nil
+
+	pagination := dto.CursorPagination{
+		Limit:       limit,
+		HasNextPage: hasNextPage,
+	}
+	if cursor != nil && *cursor != uuid.Nil {
+		cursorStr := cursor.String()
+		pagination.Cursor = &cursorStr
+	}
+	if hasNextPage && len(users) > 0 {
+		nextCursor := users[len(users)-1].ID.String()
+		pagination.NextCursor = &nextCursor
+	}
+
+	return responses, pagination, nil
 }
 
 // GetUserDetail returns a single user by ID
 func (uc *adminUseCase) GetUserDetail(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error) {
 	user, err := uc.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get user detail %s: %w", id.String(), err)
 	}
 	resp := userModelToResponse(*user)
 	return &resp, nil
@@ -90,29 +103,42 @@ func (uc *adminUseCase) GetUserDetail(ctx context.Context, id uuid.UUID) (*dto.U
 func (uc *adminUseCase) ToggleAdmin(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error) {
 	user, err := uc.userRepo.ToggleAdmin(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("toggle admin %s: %w", id.String(), err)
 	}
 	resp := userModelToResponse(*user)
 	return &resp, nil
 }
 
-// GetCurriculumsWithPagination returns paginated curriculums and total count
-func (uc *adminUseCase) GetCurriculumsWithPagination(ctx context.Context, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, int64, error) {
-	total, err := uc.curriculumRepo.Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count curriculums: %w", err)
+// GetCurriculumsWithPagination returns cursor-paginated curriculums.
+func (uc *adminUseCase) GetCurriculumsWithPagination(ctx context.Context, cursor *uuid.UUID, limit int) ([]dto.CurriculumResponse, dto.CursorPagination, error) {
+	if limit < 1 || limit > 100 {
+		limit = 10
 	}
 
-	curriculums, err := uc.curriculumRepo.GetAll(ctx, page, pageSize, sortBy, sortOrder)
+	curriculums, hasNextPage, err := uc.curriculumRepo.GetPageAfterID(ctx, cursor, limit)
 	if err != nil {
-		return nil, 0, err
+		return nil, dto.CursorPagination{}, fmt.Errorf("get curriculums page: %w", err)
 	}
 
 	responses := make([]dto.CurriculumResponse, len(curriculums))
 	for i, c := range curriculums {
 		responses[i] = curriculumModelToResponse(c)
 	}
-	return responses, total, nil
+
+	pagination := dto.CursorPagination{
+		Limit:       limit,
+		HasNextPage: hasNextPage,
+	}
+	if cursor != nil && *cursor != uuid.Nil {
+		cursorStr := cursor.String()
+		pagination.Cursor = &cursorStr
+	}
+	if hasNextPage && len(curriculums) > 0 {
+		nextCursor := curriculums[len(curriculums)-1].ID.String()
+		pagination.NextCursor = &nextCursor
+	}
+
+	return responses, pagination, nil
 }
 
 // GetCurriculumsStats returns curriculum statistics

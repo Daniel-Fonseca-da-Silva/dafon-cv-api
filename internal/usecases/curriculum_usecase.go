@@ -18,7 +18,7 @@ import (
 type CurriculumUseCase interface {
 	CreateCurriculum(ctx context.Context, userID uuid.UUID, req *dto.CreateCurriculumRequest) (*dto.CurriculumResponse, error)
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
-	GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error)
+	GetAllCurriculums(ctx context.Context, userID uuid.UUID, cursor *uuid.UUID, limit int) ([]dto.CurriculumResponse, dto.CursorPagination, error)
 	GetCurriculumBody(ctx context.Context, curriculumID uuid.UUID) (*dto.CurriculumBodyResponse, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
@@ -230,19 +230,15 @@ func (cu *curriculumUseCase) GetCurriculumByID(ctx context.Context, id uuid.UUID
 	return &curriculumResponse, nil
 }
 
-// GetAllCurriculums traz todos os curriculums paginados de um usuário específico
-func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.UUID, page, pageSize int, sortBy, sortOrder string) ([]dto.CurriculumResponse, error) {
-	// Validar parâmetros de paginação
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10 // Tamanho de página padrão
+// GetAllCurriculums retrieves user curriculums using cursor-based pagination.
+func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.UUID, cursor *uuid.UUID, limit int) ([]dto.CurriculumResponse, dto.CursorPagination, error) {
+	if limit < 1 || limit > 100 {
+		limit = 10
 	}
 
-	curriculums, err := cu.curriculumRepo.GetAllByUserID(ctx, userID, page, pageSize, sortBy, sortOrder)
+	curriculums, hasNextPage, err := cu.curriculumRepo.GetPageAfterIDByUserID(ctx, userID, cursor, limit)
 	if err != nil {
-		return nil, err
+		return nil, dto.CursorPagination{}, err
 	}
 
 	// Converter curriculums para DTOs
@@ -297,7 +293,20 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 		})
 	}
 
-	return curriculumsResponse, nil
+	pagination := dto.CursorPagination{
+		Limit:       limit,
+		HasNextPage: hasNextPage,
+	}
+	if cursor != nil && *cursor != uuid.Nil {
+		cursorStr := cursor.String()
+		pagination.Cursor = &cursorStr
+	}
+	if hasNextPage && len(curriculums) > 0 {
+		nextCursor := curriculums[len(curriculums)-1].ID.String()
+		pagination.NextCursor = &nextCursor
+	}
+
+	return curriculumsResponse, pagination, nil
 }
 
 // GetCurriculumBody retrieves a curriculum body in text format by curriculum ID

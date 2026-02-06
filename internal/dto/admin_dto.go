@@ -15,3 +15,15 @@ type UsersStatsResponse struct {
 type CurriculumsStatsResponse struct {
 	Total int64 `json:"total"`
 }
+
+// AdminUsersListResponse represents paginated users list for admin
+type AdminUsersListResponse struct {
+	Data       []UserResponse   `json:"data"`
+	Pagination CursorPagination `json:"pagination"`
+}
+
+// AdminCurriculumsListResponse represents paginated curriculums list for admin
+type AdminCurriculumsListResponse struct {
+	Data       []CurriculumResponse `json:"data"`
+	Pagination CursorPagination     `json:"pagination"`
+}
