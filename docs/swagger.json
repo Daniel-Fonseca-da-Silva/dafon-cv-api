@@ -1,13 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API for curriculum",
+        "description": "API for consultancy business and cv generation",
         "title": "Dafon CV API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "url": "http://www.example.com/support",
-            "email": "support@example.com"
+            "name": "DafonCV Support",
+            "url": "https://www.dafoncv.online",
+            "email": "dafondeveloper@gmail.com"
         },
         "license": {
             "name": "Apache 2.0",

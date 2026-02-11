@@ -526,10 +526,10 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@example.com
-    name: API Support
-    url: http://www.example.com/support
-  description: API for curriculum
+    email: dafondeveloper@gmail.com
+    name: DafonCV Support
+    url: https://www.dafoncv.online
+  description: API for consultancy business and cv generation
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html

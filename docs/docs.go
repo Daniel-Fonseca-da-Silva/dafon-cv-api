@@ -11,9 +11,9 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "url": "http://www.example.com/support",
-            "email": "support@example.com"
+            "name": "DafonCV Support",
+            "url": "https://www.dafoncv.online",
+            "email": "dafondeveloper@gmail.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -2376,7 +2376,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Dafon CV API",
-	Description:      "API for curriculum",
+	Description:      "API for consultancy business and cv generation",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
