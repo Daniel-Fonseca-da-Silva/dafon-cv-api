@@ -4,7 +4,6 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
@@ -13,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
+func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc) {
 	// Initialize cache service
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 
@@ -23,7 +22,7 @@ func SetupConfigurationRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logge
 	configurationHandler := handlers.NewConfigurationHandler(configurationUseCase, logger)
 
 	// Configuration routes group (protected with authentication)
-	configuration := router.Group("/api/v1/configuration", middleware.StaticTokenMiddleware(cfg.App.StaticToken))
+	configuration := router.Group("/api/v1/configuration", authMiddleware)
 
 	{
 		configuration.GET("/:user_id", configurationHandler.GetConfigurationByUserID)
