@@ -11,9 +11,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// SetupGenerateIntroAIRoutes configures AI filtering-related routes
-func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateAnalyzeAIUseCase, err := usecases.NewGenerateAnalyzeAIUseCase()
+// SetupGenerateAnalyzeAIRoutes configures AI filtering-related routes
+func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateAnalyzeAIUseCase, err := usecases.NewGenerateAnalyzeAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Analyze AI usecase", zap.Error(err))
 		return
@@ -25,7 +25,8 @@ func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *c
 
 	generateAnalyze := router.Group(
 		"/api/v1/generate-analyze-ai",
-		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
 		ratelimit.RateLimiterMiddleware(aiRateLimiter),
 	)
 	{

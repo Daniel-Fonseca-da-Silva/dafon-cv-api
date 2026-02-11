@@ -12,8 +12,8 @@ import (
 )
 
 // SetupGenerateCoursesAIRoutes configures AI filtering-related routes
-func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase()
+func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Courses AI usecase", zap.Error(err))
 		return
@@ -25,7 +25,8 @@ func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *c
 
 	generateCourses := router.Group(
 		"/api/v1/generate-courses-ai",
-		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
 		ratelimit.RateLimiterMiddleware(aiRateLimiter),
 	)
 	{

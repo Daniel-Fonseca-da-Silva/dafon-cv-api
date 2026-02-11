@@ -3,11 +3,12 @@ package usecases
 import (
 	"context"
 	"fmt"
-	"os"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // GenerateTaskAIUseCase defines the interface for AI filtering operations
@@ -21,13 +22,12 @@ type generateTaskAIUseCase struct {
 }
 
 // NewGenerateTaskAIUseCase creates a new instance of GenerateTaskAIUseCase
-func NewGenerateTaskAIUseCase() (GenerateTaskAIUseCase, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+func NewGenerateTaskAIUseCase(apiKey string) (GenerateTaskAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
-	client := openai.NewClient()
+	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	return &generateTaskAIUseCase{
 		openaiClient: &client,
@@ -102,8 +102,9 @@ Every new request must result in a new and varied list. Do not repeat formulas o
 If the input is unclear or insufficient, ask briefly for more detail (e.g., “your can specify better the task or field of study?”).`),
 			openai.UserMessage(prompt),
 		},
-		MaxTokens:   openai.Int(1000),
-		Temperature: openai.Float(0.7),
+		MaxTokens:   openai.Int(int64(config.ParseIntEnv("OPENAI_MAX_TOKENS", 1000))),
+		Temperature: openai.Float(config.ParseFloatEnv("OPENAI_TEMPERATURE", 0.7)),
+		TopP:        openai.Float(config.ParseFloatEnv("OPENAI_TOP_P", 1.0)),
 	}
 
 	// Call OpenAI API

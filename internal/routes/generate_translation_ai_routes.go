@@ -12,8 +12,8 @@ import (
 )
 
 // SetupGenerateTranslationAIRoutes configures AI filtering-related routes
-func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateTranslationAIUseCase, err := usecases.NewGenerateTranslationAIUseCase()
+func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateTranslationAIUseCase, err := usecases.NewGenerateTranslationAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Translation AI usecase", zap.Error(err))
 		return
@@ -25,7 +25,8 @@ func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cf
 
 	generateTranslations := router.Group(
 		"/api/v1/generate-translation-ai",
-		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
 		ratelimit.RateLimiterMiddleware(aiRateLimiter),
 	)
 	{

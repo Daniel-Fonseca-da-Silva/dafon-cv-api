@@ -12,8 +12,8 @@ import (
 )
 
 // SetupGenerateSkillAIRoutes configures AI skill generation-related routes
-func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateSkillAIUseCase, err := usecases.NewGenerateSkillAIUseCase()
+func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateSkillAIUseCase, err := usecases.NewGenerateSkillAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Skill AI usecase", zap.Error(err))
 		return
@@ -25,7 +25,8 @@ func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *con
 
 	generateSkill := router.Group(
 		"/api/v1/generate-skill-ai",
-		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
 		ratelimit.RateLimiterMiddleware(aiRateLimiter),
 	)
 	{

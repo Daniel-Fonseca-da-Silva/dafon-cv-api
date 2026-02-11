@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // GenerateAnalyzeAIUseCase defines the interface for AI filtering operations
@@ -22,13 +23,12 @@ type generateAnalyzeAIUseCase struct {
 }
 
 // NewGenerateAnalyzeAIUseCase creates a new instance of GenerateAnalyzeAIUseCase
-func NewGenerateAnalyzeAIUseCase() (GenerateAnalyzeAIUseCase, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+func NewGenerateAnalyzeAIUseCase(apiKey string) (GenerateAnalyzeAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
-	client := openai.NewClient()
+	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	return &generateAnalyzeAIUseCase{
 		openaiClient: &client,
@@ -135,8 +135,9 @@ LANGUAGE AND FORMATTING REQUIREMENTS:
 Your goal is to help the person improve their curriculum and increase their chances of success in the job market.`),
 			openai.UserMessage(prompt),
 		},
-		MaxTokens:   openai.Int(2000),
-		Temperature: openai.Float(0.7),
+		MaxTokens:   openai.Int(int64(config.ParseIntEnv("OPENAI_MAX_TOKENS", 1000))),
+		Temperature: openai.Float(config.ParseFloatEnv("OPENAI_TEMPERATURE", 0.7)),
+		TopP:        openai.Float(config.ParseFloatEnv("OPENAI_TOP_P", 1.0)),
 	}
 
 	// Call OpenAI API
