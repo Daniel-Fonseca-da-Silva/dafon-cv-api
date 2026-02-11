@@ -128,6 +128,11 @@ func GetClientIP(r *http.Request) string {
 // RateLimiterMiddleware cria um middleware para rate limiting
 func RateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if shouldSkipRateLimit(c.Request.URL.Path) {
+			c.Next()
+			return
+		}
+
 		clientIP := GetClientIP(c.Request)
 
 		if !rl.Allow(clientIP) {
@@ -146,6 +151,11 @@ func RateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 // UserRateLimiterMiddleware cria um middleware para rate limiting específico para usuários
 func UserRateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if shouldSkipRateLimit(c.Request.URL.Path) {
+			c.Next()
+			return
+		}
+
 		// Tenta obter o ID do usuário do contexto (definido pelo middleware de autenticação)
 		userID, exists := c.Get("user_id")
 		if !exists {
@@ -173,5 +183,16 @@ func UserRateLimiterMiddleware(rl *RateLimiter) gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func shouldSkipRateLimit(path string) bool {
+	switch path {
+	case "/health":
+		return true
+	case "/api/v1/subscriptions/webhook":
+		return true
+	default:
+		return false
 	}
 }

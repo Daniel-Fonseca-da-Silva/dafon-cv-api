@@ -45,7 +45,15 @@ func AutoMigrate(log *zap.Logger) error {
 	originalLogger := DB.Config.Logger
 	DB.Config.Logger = logger.Default.LogMode(logger.Silent)
 
-	if err := DB.AutoMigrate(&models.User{}, &models.Curriculums{}, &models.Work{}, &models.Configuration{}, &models.Session{}, &models.Education{}); err != nil {
+	if err := DB.AutoMigrate(
+		&models.User{},
+		&models.Subscription{},
+		&models.Curriculums{},
+		&models.Work{},
+		&models.Configuration{},
+		&models.Session{},
+		&models.Education{},
+	); err != nil {
 		// Restore original logger before returning error
 		DB.Config.Logger = originalLogger
 		return errors.WrapError(err, "failed to run migrations")

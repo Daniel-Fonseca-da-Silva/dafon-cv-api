@@ -21,6 +21,12 @@ type ValidationErrorResponse struct {
 	Errors  []ValidationError `json:"errors"`
 }
 
+// HandleError writes a standard error response and aborts the request.
+// Use this for non-validation errors (auth/permission/internal).
+func HandleError(c *gin.Context, status int, message string) {
+	c.AbortWithStatusJSON(status, gin.H{"error": message})
+}
+
 func HandleValidationError(c *gin.Context, err error) {
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		formattedError := formatValidationError(validationErrors)
