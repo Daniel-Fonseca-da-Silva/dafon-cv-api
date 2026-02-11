@@ -28,15 +28,23 @@ type UserUseCase interface {
 type userUseCase struct {
 	userRepo          repositories.UserRepository
 	configurationRepo repositories.ConfigurationRepository
+	subscriptionRepo  repositories.SubscriptionRepository
 	cacheService      *cache.CacheService
 	logger            *zap.Logger
 }
 
 // NewUserUseCase creates a new instance of UserUseCase
-func NewUserUseCase(userRepo repositories.UserRepository, configurationRepo repositories.ConfigurationRepository, cacheService *cache.CacheService, logger *zap.Logger) UserUseCase {
+func NewUserUseCase(
+	userRepo repositories.UserRepository,
+	configurationRepo repositories.ConfigurationRepository,
+	subscriptionRepo repositories.SubscriptionRepository,
+	cacheService *cache.CacheService,
+	logger *zap.Logger,
+) UserUseCase {
 	return &userUseCase{
 		userRepo:          userRepo,
 		configurationRepo: configurationRepo,
+		subscriptionRepo:  subscriptionRepo,
 		cacheService:      cacheService,
 		logger:            logger,
 	}
@@ -73,6 +81,17 @@ func (uc *userUseCase) CreateUser(ctx context.Context, req *dto.RegisterRequest)
 	if err := uc.configurationRepo.Create(ctx, configuration); err != nil {
 		uc.logger.Error("Failed to create user configuration", zap.Error(err))
 		return nil, fmt.Errorf("failed to create user configuration: %w", err)
+	}
+
+	// Create default Free subscription (no Stripe card required).
+	subscription := &models.Subscription{
+		UserID: user.ID,
+		Plan:   models.SubscriptionPlanFree,
+		Status: models.SubscriptionStatusActive,
+	}
+	if err := uc.subscriptionRepo.Create(ctx, subscription); err != nil {
+		uc.logger.Error("Failed to create user subscription", zap.Error(err))
+		return nil, fmt.Errorf("failed to create user subscription: %w", err)
 	}
 
 	// Return response
