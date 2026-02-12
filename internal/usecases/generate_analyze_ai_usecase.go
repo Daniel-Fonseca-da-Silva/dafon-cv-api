@@ -25,7 +25,7 @@ type generateAnalyzeAIUseCase struct {
 }
 
 // NewGenerateAnalyzeAIUseCase creates a new instance of GenerateAnalyzeAIUseCase
-func NewGenerateAnalyzeAIUseCase(apiKey string) (GenerateAnalyzeAIUseCase, error) {
+func NewGenerateAnalyzeAIUseCase(apiKey string, curriculumUseCase CurriculumUseCase) (GenerateAnalyzeAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}

@@ -13,13 +13,9 @@ import (
 )
 
 // SetupCurriculumRoutes configures curriculum-related routes
-func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc) {
-	// Initialize cache service
+func SetupCurriculumRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, curriculumUseCase usecases.CurriculumUseCase) {
+	// Initialize cache service (used by user use case)
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
-
-	// Initialize curriculum dependencies
-	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
-	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, cacheService, logger)
 
 	// Initialize user dependencies for user verification
 	userRepo := repositories.NewUserRepository(db, logger)

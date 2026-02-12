@@ -12,8 +12,8 @@ import (
 )
 
 // SetupGenerateAnalyzeAIRoutes configures AI filtering-related routes
-func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
-	generateAnalyzeAIUseCase, err := usecases.NewGenerateAnalyzeAIUseCase(cfg.OpenAI.APIKey)
+func SetupGenerateAnalyzeAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase, curriculumUseCase usecases.CurriculumUseCase) {
+	generateAnalyzeAIUseCase, err := usecases.NewGenerateAnalyzeAIUseCase(cfg.OpenAI.APIKey, curriculumUseCase)
 	if err != nil {
 		logger.Error("Failed to create Generate Analyze AI usecase", zap.Error(err))
 		return

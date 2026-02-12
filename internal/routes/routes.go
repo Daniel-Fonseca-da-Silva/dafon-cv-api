@@ -2,6 +2,7 @@ package routes
 
 import (
 	_ "github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/docs"
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
@@ -43,8 +44,13 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup admin (back office) routes
 	SetupAdminRoutes(router, db, logger, cfg)
 
+	// Curriculum use case (shared by curriculum and generate-analyze-ai routes)
+	cacheService := cache.NewCacheService(redis.GetClient(), logger)
+	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
+	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, cacheService, logger)
+
 	// Setup curriculum routes
-	SetupCurriculumRoutes(router, db, logger, cfg, sessionAuthMiddleware)
+	SetupCurriculumRoutes(router, db, logger, cfg, sessionAuthMiddleware, curriculumUseCase)
 
 	// Subscription usecase (used by subscription-gated endpoints)
 	subscriptionRepo := repositories.NewSubscriptionRepository(db, logger)
@@ -72,7 +78,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	SetupEmailRoutes(router, logger, cfg)
 
 	// Setup generate analyze AI routes
-	SetupGenerateAnalyzeAIRoutes(router, logger, cfg, sessionAuthMiddleware, subscriptionUseCase)
+	SetupGenerateAnalyzeAIRoutes(router, logger, cfg, sessionAuthMiddleware, subscriptionUseCase, curriculumUseCase)
 
 	// Setup generate translation AI routes
 	SetupGenerateTranslationAIRoutes(router, logger, cfg, sessionAuthMiddleware, subscriptionUseCase)
