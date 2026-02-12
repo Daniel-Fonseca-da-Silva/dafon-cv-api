@@ -12,20 +12,23 @@ import (
 )
 
 // SetupGenerateSkillAIRoutes configures AI skill generation-related routes
-func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateSkillAIUseCase, err := usecases.NewGenerateSkillAIUseCase()
+func SetupGenerateSkillAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateSkillAIUseCase, err := usecases.NewGenerateSkillAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Skill AI usecase", zap.Error(err))
 		return
 	}
 
-	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase)
+	generateSkillAIHandler := handlers.NewGenerateSkillAIHandler(generateSkillAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateSkill := router.Group("/api/v1/generate-skill-ai")
-	generateSkill.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateSkill.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateSkill := router.Group(
+		"/api/v1/generate-skill-ai",
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateSkill.POST("", generateSkillAIHandler.FilterContent)
 	}

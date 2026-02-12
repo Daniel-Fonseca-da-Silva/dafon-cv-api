@@ -24,7 +24,18 @@ func NewEmailHandler(emailUseCase usecases.EmailUseCase, logger *zap.Logger) *Em
 	}
 }
 
-// SendEmail handles POST /email/send-email request
+// SendEmail godoc
+// @Summary      Send authentication email
+// @Description  Sends an authentication email with session token link
+// @Tags         email
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.SendEmailRequest   true  "Email payload"
+// @Success      200   {object}  dto.SendEmailResponse
+// @Failure      400   {object}  dto.ErrorResponseValidation  "Validation error"
+// @Failure      500   {object}  dto.ErrorResponseServer  "Internal server error"
+// @Router       /api/v1/send-email [post]
+// @Security     BearerAuth
 func (h *EmailHandler) SendEmail(c *gin.Context) {
 	var req dto.SendEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -37,8 +48,7 @@ func (h *EmailHandler) SendEmail(c *gin.Context) {
 	// Send the authentication email
 	err := h.emailUseCase.SendSessionTokenEmail(req.Email, req.Name, req.URLToken)
 	if err != nil {
-		h.logger.Error("Failed to send email")
-		transporthttp.HandleValidationError(c, err)
+		h.abortWithInternalServerError(c, "send session token email", err)
 		return
 	}
 
@@ -50,4 +60,15 @@ func (h *EmailHandler) SendEmail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *EmailHandler) abortWithInternalServerError(c *gin.Context, operation string, err error) {
+	if h.logger != nil {
+		h.logger.Error("Email handler failed",
+			zap.String("operation", operation),
+			zap.String("path", c.FullPath()),
+			zap.Error(err),
+		)
+	}
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 }

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"time"
 
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/models"
@@ -36,8 +37,11 @@ func (r *sessionRepository) Create(session *models.Session) error {
 
 func (r *sessionRepository) GetByToken(token string) (*models.Session, error) {
 	var session models.Session
-	err := r.db.Where("token = ? AND is_active = ?", token, true).First(&session).Error
+	err := r.db.Where("token = ? AND is_active = ? AND expires_at > ?", token, true, time.Now()).First(&session).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &session, nil

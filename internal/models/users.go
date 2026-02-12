@@ -23,6 +23,7 @@ type User struct {
 	Admin         bool           `json:"admin,omitempty" gorm:"default:false"`
 	Curriculums   []Curriculums  `json:"curriculums,omitempty" gorm:"foreignKey:UserID"`
 	Configuration *Configuration `json:"configuration,omitempty" gorm:"foreignKey:UserID"`
+	Subscription  *Subscription  `json:"subscription,omitempty" gorm:"foreignKey:UserID"`
 	Sessions      []Session      `json:"sessions,omitempty" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 

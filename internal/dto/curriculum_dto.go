@@ -46,3 +46,9 @@ type CurriculumResponse struct {
 type CurriculumBodyResponse struct {
 	Body string `json:"content"`
 }
+
+// CurriculumListResponse represents the paginated list of curriculums
+type CurriculumListResponse struct {
+	Data       []CurriculumResponse `json:"data"`
+	Pagination CursorPagination     `json:"pagination"`
+}

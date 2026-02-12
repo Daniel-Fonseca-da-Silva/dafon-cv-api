@@ -12,20 +12,23 @@ import (
 )
 
 // SetupGenerateAcademicAIRoutes configures AI filtering-related routes
-func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateAcademicAIUseCase, err := usecases.NewGenerateAcademicAIUseCase()
+func SetupGenerateAcademicAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateAcademicAIUseCase, err := usecases.NewGenerateAcademicAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Academic AI usecase", zap.Error(err))
 		return
 	}
 
-	generateAcademicAIHandler := handlers.NewGenerateAcademicAIHandler(generateAcademicAIUseCase)
+	generateAcademicAIHandler := handlers.NewGenerateAcademicAIHandler(generateAcademicAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateAcademic := router.Group("/api/v1/generate-academic-ai")
-	generateAcademic.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateAcademic.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateAcademic := router.Group(
+		"/api/v1/generate-academic-ai",
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateAcademic.POST("", generateAcademicAIHandler.FilterContent)
 	}

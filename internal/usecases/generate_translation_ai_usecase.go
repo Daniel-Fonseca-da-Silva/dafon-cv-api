@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // GenerateTranslationAIUseCase defines the interface for AI translation operations
@@ -23,13 +24,12 @@ type generateTranslationAIUseCase struct {
 }
 
 // NewGenerateIntroAIUseCase creates a new instance of GenerateTranslationAIUseCase
-func NewGenerateTranslationAIUseCase() (GenerateTranslationAIUseCase, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+func NewGenerateTranslationAIUseCase(apiKey string) (GenerateTranslationAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
-	client := openai.NewClient()
+	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	return &generateTranslationAIUseCase{
 		openaiClient: &client,
@@ -73,8 +73,9 @@ Rules:
 5. Preserve formatting and special characters where appropriate`),
 			openai.UserMessage(prompt),
 		},
-		MaxTokens:   openai.Int(4000),
-		Temperature: openai.Float(0.3),
+		MaxTokens:   openai.Int(int64(config.ParseIntEnv("OPENAI_MAX_TOKENS", 4000))),
+		Temperature: openai.Float(config.ParseFloatEnv("OPENAI_TEMPERATURE", 0.3)),
+		TopP:        openai.Float(config.ParseFloatEnv("OPENAI_TOP_P", 1.0)),
 	}
 
 	// Call OpenAI API

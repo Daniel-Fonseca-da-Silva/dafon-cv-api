@@ -1,0 +1,1537 @@
+basePath: /
+definitions:
+  dto.ATSCompatibility:
+    properties:
+      assessment:
+        type: string
+      chance:
+        type: string
+      recommendations:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.AdminCurriculumsListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.CurriculumResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.CursorPagination'
+    type: object
+  dto.AdminUsersListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.CursorPagination'
+    type: object
+  dto.ConfigurationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      language:
+        type: string
+      newsletter:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.CreateCurriculumRequest:
+    properties:
+      courses:
+        type: string
+      driver_license:
+        type: string
+      educations:
+        items:
+          $ref: '#/definitions/dto.CreateEducationRequest'
+        type: array
+      email:
+        type: string
+      full_name:
+        maxLength: 50
+        minLength: 5
+        type: string
+      image_url:
+        type: string
+      intro:
+        type: string
+      languages:
+        type: string
+      phone:
+        type: string
+      skills:
+        type: string
+      social_links:
+        type: string
+      user_id:
+        type: string
+      works:
+        items:
+          $ref: '#/definitions/dto.CreateWorkRequest'
+        type: array
+    required:
+    - driver_license
+    - email
+    - full_name
+    - intro
+    - languages
+    - phone
+    - skills
+    - user_id
+    type: object
+  dto.CreateEducationRequest:
+    properties:
+      degree:
+        maxLength: 255
+        minLength: 2
+        type: string
+      description:
+        maxLength: 255
+        minLength: 2
+        type: string
+      end_date:
+        type: string
+      institution:
+        maxLength: 255
+        minLength: 2
+        type: string
+      start_date:
+        type: string
+    required:
+    - degree
+    - description
+    - institution
+    - start_date
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: John Doe
+        maxLength: 100
+        minLength: 10
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  dto.CreateWorkRequest:
+    properties:
+      company:
+        maxLength: 255
+        minLength: 2
+        type: string
+      description:
+        type: string
+      end_date:
+        description: Nullable para trabalhos atuais
+        type: string
+      position:
+        maxLength: 255
+        minLength: 2
+        type: string
+      start_date:
+        type: string
+    required:
+    - company
+    - position
+    - start_date
+    type: object
+  dto.CurriculumBodyResponse:
+    properties:
+      content:
+        type: string
+    type: object
+  dto.CurriculumListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.CurriculumResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.CursorPagination'
+    type: object
+  dto.CurriculumResponse:
+    properties:
+      courses:
+        type: string
+      created_at:
+        type: string
+      driver_license:
+        type: string
+      educations:
+        items:
+          $ref: '#/definitions/dto.EducationResponse'
+        type: array
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      intro:
+        type: string
+      languages:
+        type: string
+      phone:
+        type: string
+      skills:
+        type: string
+      social_links:
+        type: string
+      updated_at:
+        type: string
+      works:
+        items:
+          $ref: '#/definitions/dto.WorkResponse'
+        type: array
+    type: object
+  dto.CurriculumsStatsResponse:
+    properties:
+      total:
+        type: integer
+    type: object
+  dto.CursorPagination:
+    properties:
+      cursor:
+        type: string
+      has_next_page:
+        type: boolean
+      limit:
+        type: integer
+      next_cursor:
+        type: string
+    type: object
+  dto.DashboardResponse:
+    properties:
+      curriculums_count:
+        type: integer
+      users_count:
+        type: integer
+    type: object
+  dto.EducationResponse:
+    properties:
+      created_at:
+        type: string
+      degree:
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      institution:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        example: user not found
+        type: string
+    type: object
+  dto.ErrorResponseServer:
+    properties:
+      error:
+        example: Internal server error
+        type: string
+    type: object
+  dto.ErrorResponseValidation:
+    properties:
+      error:
+        example: Validation error
+        type: string
+    type: object
+  dto.GenerateAcademicAIRequest:
+    properties:
+      content:
+        maxLength: 20000
+        minLength: 3
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateAcademicAIResponse:
+    properties:
+      filtered_content:
+        type: string
+    type: object
+  dto.GenerateAnalyzeAIRequest:
+    properties:
+      content:
+        example: string
+        maxLength: 20000
+        minLength: 500
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateAnalyzeAIResponse:
+    properties:
+      ats_compatibility:
+        $ref: '#/definitions/dto.ATSCompatibility'
+      best_practices:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      improvement_points:
+        items:
+          type: string
+        type: array
+      professional_alignment:
+        items:
+          type: string
+        type: array
+      recommendations:
+        items:
+          type: string
+        type: array
+      score:
+        type: number
+      strengths:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.GenerateCoursesAIRequest:
+    properties:
+      content:
+        maxLength: 20000
+        minLength: 3
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateCoursesAIResponse:
+    properties:
+      filtered_content:
+        type: string
+    type: object
+  dto.GenerateIntroAIRequest:
+    properties:
+      content:
+        maxLength: 20000
+        minLength: 3
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateIntroAIResponse:
+    properties:
+      filtered_content:
+        type: string
+    type: object
+  dto.GenerateSkillAIRequest:
+    properties:
+      content:
+        maxLength: 20000
+        minLength: 3
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateSkillAIResponse:
+    properties:
+      filtered_content:
+        type: string
+    type: object
+  dto.GenerateTaskAIRequest:
+    properties:
+      content:
+        maxLength: 20000
+        minLength: 3
+        type: string
+    required:
+    - content
+    type: object
+  dto.GenerateTaskAIResponse:
+    properties:
+      filtered_content:
+        type: string
+    type: object
+  dto.GenerateTranslationAIRequestDoc:
+    properties:
+      curriculum_data:
+        $ref: '#/definitions/dto.CurriculumResponse'
+      target_language:
+        enum:
+        - pt
+        - en
+        - es
+        type: string
+    required:
+    - curriculum_data
+    - target_language
+    type: object
+  dto.MessageResponse:
+    properties:
+      message:
+        example: User deleted successfully
+        type: string
+    type: object
+  dto.SendEmailRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      url_token:
+        minLength: 1
+        type: string
+    required:
+    - email
+    - name
+    - url_token
+    type: object
+  dto.SendEmailResponse:
+    properties:
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.UpdateConfigurationRequest:
+    properties:
+      language:
+        maxLength: 255
+        minLength: 2
+        type: string
+      newsletter:
+        type: boolean
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      age:
+        minimum: 0
+        type: integer
+      city:
+        maxLength: 255
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+      employment:
+        type: boolean
+      gender:
+        enum:
+        - male
+        - female
+        type: string
+      image_url:
+        type: string
+      migration:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 10
+        type: string
+      phone:
+        type: string
+      salary:
+        type: number
+      state:
+        maxLength: 255
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      admin:
+        type: boolean
+      age:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      employment:
+        type: boolean
+      gender:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      migration:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      salary:
+        type: number
+      state:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UsersResponse:
+    properties:
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+    type: object
+  dto.UsersStatsResponse:
+    properties:
+      total:
+        type: integer
+    type: object
+  dto.WorkResponse:
+    properties:
+      company:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      position:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dafondeveloper@gmail.com
+    name: DafonCV Support
+    url: https://www.dafoncv.online
+  description: API for consultancy business and cv generation
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Dafon CV API
+  version: "1.0"
+paths:
+  /api/v1/admin/curriculums:
+    get:
+      consumes:
+      - application/json
+      description: Returns paginated list of curriculums. Requires admin user (X-User-ID
+        header).
+      parameters:
+      - description: Cursor (UUID) to fetch items after
+        in: query
+        name: cursor
+        type: string
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminCurriculumsListResponse'
+        "400":
+          description: Invalid pagination or sort params
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get curriculums (paginated)
+      tags:
+      - admin
+  /api/v1/admin/curriculums/stats:
+    get:
+      consumes:
+      - application/json
+      description: Returns curriculums count. Requires admin user (X-User-ID header).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CurriculumsStatsResponse'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get curriculums statistics
+      tags:
+      - admin
+  /api/v1/admin/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Returns dashboard summary (users and curriculums count). Requires
+        admin user (X-User-ID header).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DashboardResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get admin dashboard
+      tags:
+      - admin
+  /api/v1/admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Returns paginated list of users. Requires admin user (X-User-ID
+        header).
+      parameters:
+      - description: Cursor (UUID) to fetch items after
+        in: query
+        name: cursor
+        type: string
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminUsersListResponse'
+        "400":
+          description: Invalid pagination params
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get users (paginated)
+      tags:
+      - admin
+  /api/v1/admin/users/{id}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Returns a single user by ID. Requires admin user (X-User-ID header).
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get user detail by ID
+      tags:
+      - admin
+  /api/v1/admin/users/{id}/toggle-admin:
+    patch:
+      consumes:
+      - application/json
+      description: Toggles the admin flag for a user. Requires admin user (X-User-ID
+        header).
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Toggle user admin flag
+      tags:
+      - admin
+  /api/v1/admin/users/stats:
+    get:
+      consumes:
+      - application/json
+      description: Returns users count. Requires admin user (X-User-ID header).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UsersStatsResponse'
+        "401":
+          description: X-User-ID header required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      - UserIDHeader: []
+      summary: Get users statistics
+      tags:
+      - admin
+  /api/v1/configuration/{user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes the configuration for the given user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Configuration not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Delete configuration by user ID
+      tags:
+      - configuration
+    get:
+      consumes:
+      - application/json
+      description: Returns the configuration for the given user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ConfigurationResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Configuration not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get configuration by user ID
+      tags:
+      - configuration
+    patch:
+      consumes:
+      - application/json
+      description: Updates the configuration for the given user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ConfigurationResponse'
+        "400":
+          description: Invalid user ID format or validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Configuration not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Update configuration by user ID
+      tags:
+      - configuration
+  /api/v1/curriculums:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new curriculum for a user
+      parameters:
+      - description: Create payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCurriculumRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CurriculumResponse'
+        "400":
+          description: Validation error or invalid user ID
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Create curriculum
+      tags:
+      - curriculum
+  /api/v1/curriculums/{curriculum_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a curriculum by ID
+      parameters:
+      - description: Curriculum ID
+        in: path
+        name: curriculum_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Invalid curriculum ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Curriculum not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Delete curriculum by ID
+      tags:
+      - curriculum
+    get:
+      consumes:
+      - application/json
+      description: Returns a curriculum by ID
+      parameters:
+      - description: Curriculum ID
+        in: path
+        name: curriculum_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CurriculumResponse'
+        "400":
+          description: Invalid curriculum ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Curriculum not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get curriculum by ID
+      tags:
+      - curriculum
+  /api/v1/curriculums/get-all-by-user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns paginated list of curriculums for the given user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Cursor (UUID) to fetch items after
+        in: query
+        name: cursor
+        type: string
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CurriculumListResponse'
+        "400":
+          description: Invalid user ID or pagination params
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get all curriculums by user ID
+      tags:
+      - curriculum
+  /api/v1/curriculums/get-body/{curriculum_id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns the curriculum content in text format
+      parameters:
+      - description: Curriculum ID
+        in: path
+        name: curriculum_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CurriculumBodyResponse'
+        "400":
+          description: Invalid curriculum ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: Curriculum not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get curriculum body
+      tags:
+      - curriculum
+  /api/v1/generate-academic-ai:
+    post:
+      consumes:
+      - application/json
+      description: Generates academic-style content from the given input
+      parameters:
+      - description: Content to process
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateAcademicAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateAcademicAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Generate academic content with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-analyze-ai:
+    post:
+      consumes:
+      - application/json
+      description: Analyzes curriculum content and returns score, improvement points,
+        ATS compatibility, and recommendations
+      parameters:
+      - description: Curriculum content to analyze
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateAnalyzeAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateAnalyzeAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Analyze curriculum with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-courses-ai:
+    post:
+      consumes:
+      - application/json
+      description: Generates courses/training content from the given input
+      parameters:
+      - description: Content to process
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateCoursesAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateCoursesAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Generate courses content with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-intro-ai:
+    post:
+      consumes:
+      - application/json
+      description: Generates professional introduction content from the given input
+      parameters:
+      - description: Content to process
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateIntroAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateIntroAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Generate intro content with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-skill-ai:
+    post:
+      consumes:
+      - application/json
+      description: Generates related skills from the given input
+      parameters:
+      - description: Content to process
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateSkillAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateSkillAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Generate skills with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-task-ai:
+    post:
+      consumes:
+      - application/json
+      description: Generates task/description content from the given input
+      parameters:
+      - description: Content to process
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateTaskAIRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GenerateTaskAIResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Generate task content with AI
+      tags:
+      - Generate AI
+  /api/v1/generate-translation-ai:
+    post:
+      consumes:
+      - application/json
+      description: Translates curriculum content to the target language (pt, en, es)
+      parameters:
+      - description: Curriculum to translate + target_language (pt, en, es)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateTranslationAIRequestDoc'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Translated curriculum (same structure as create curriculum)
+          schema:
+            $ref: '#/definitions/dto.CurriculumResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Translate curriculum with AI
+      tags:
+      - Generate AI
+  /api/v1/send-email:
+    post:
+      consumes:
+      - application/json
+      description: Sends an authentication email with session token link
+      parameters:
+      - description: Email payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendEmailResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Send authentication email
+      tags:
+      - email
+  /api/v1/user:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user
+      parameters:
+      - description: Create payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      summary: Create user
+      tags:
+      - user
+  /api/v1/user/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Delete user by ID
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Get a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: Updates an existing user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Invalid user ID format or validation error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Update user by ID
+      tags:
+      - user
+  /api/v1/user/all:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UsersResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseValidation'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponseServer'
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  UserIDHeader:
+    in: header
+    name: X-User-ID
+    type: apiKey
+swagger: "2.0"

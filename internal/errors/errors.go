@@ -12,6 +12,10 @@ var (
 	// Database related errors
 	ErrDatabaseConnection = &AppError{message: "database connection failed"}
 
+	// Redis related errors
+	ErrRedisClientNotInitialized = &AppError{message: "Redis client is not initialized"}
+	ErrRedisConnection           = &AppError{message: "Redis connection failed"}
+
 	// User related errors
 	ErrUserNotFound      = &AppError{message: "user not found"}
 	ErrUserAlreadyExists = &AppError{message: "user already exists"}

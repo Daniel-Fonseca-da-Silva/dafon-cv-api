@@ -12,20 +12,23 @@ import (
 )
 
 // SetupGenerateCoursesAIRoutes configures AI filtering-related routes
-func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase()
+func SetupGenerateCoursesAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateCoursesAIUseCase, err := usecases.NewGenerateCoursesAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Courses AI usecase", zap.Error(err))
 		return
 	}
 
-	generateCoursesAIHandler := handlers.NewGenerateCoursesAIHandler(generateCoursesAIUseCase)
+	generateCoursesAIHandler := handlers.NewGenerateCoursesAIHandler(generateCoursesAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateCourses := router.Group("/api/v1/generate-courses-ai")
-	generateCourses.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateCourses.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateCourses := router.Group(
+		"/api/v1/generate-courses-ai",
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateCourses.POST("", generateCoursesAIHandler.FilterContent)
 	}

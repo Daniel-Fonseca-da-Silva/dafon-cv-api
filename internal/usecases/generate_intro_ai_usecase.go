@@ -3,11 +3,12 @@ package usecases
 import (
 	"context"
 	"fmt"
-	"os"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // GenerateIntroAIUseCase defines the interface for AI filtering operations
@@ -21,13 +22,12 @@ type generateIntroAIUseCase struct {
 }
 
 // NewGenerateIntroAIUseCase creates a new instance of GenerateIntroAIUseCase
-func NewGenerateIntroAIUseCase() (GenerateIntroAIUseCase, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+func NewGenerateIntroAIUseCase(apiKey string) (GenerateIntroAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
-	client := openai.NewClient()
+	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	return &generateIntroAIUseCase{
 		openaiClient: &client,
@@ -72,8 +72,9 @@ PROCESS:
 REMEMBER: Your response is a description, not a question, not a request, not a suggestion. It is a finished, polished description ready to use.`),
 			openai.UserMessage(fmt.Sprintf("Generate a polished description based on this content:\n\n%s", req.Content)),
 		},
-		MaxTokens:   openai.Int(1000),
-		Temperature: openai.Float(0.7),
+		MaxTokens:   openai.Int(int64(config.ParseIntEnv("OPENAI_MAX_TOKENS", 1000))),
+		Temperature: openai.Float(config.ParseFloatEnv("OPENAI_TEMPERATURE", 0.7)),
+		TopP:        openai.Float(config.ParseFloatEnv("OPENAI_TOP_P", 1.0)),
 	}
 
 	// Call OpenAI API

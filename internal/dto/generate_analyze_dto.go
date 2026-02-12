@@ -2,7 +2,7 @@ package dto
 
 // GenerateAnalyzeAIRequest represents the request structure for AI filtering
 type GenerateAnalyzeAIRequest struct {
-	Content string `json:"content" binding:"required,min=500,max=20000"`
+	Content string `json:"content" binding:"required,min=500,max=20000" example:"string"`
 }
 
 // GenerateAnalyzeAIResponse represents the response structure for AI curriculum analysis

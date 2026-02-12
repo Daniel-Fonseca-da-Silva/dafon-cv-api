@@ -1,3 +1,25 @@
+// @title           Dafon CV API
+// @version         1.0
+// @description     API for consultancy business and cv generation
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   DafonCV Support
+// @contact.url    https://www.dafoncv.online
+// @contact.email  dafondeveloper@gmail.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
+// @securityDefinitions.apikey UserIDHeader
+// @in header
+// @name X-User-ID
 package main
 
 import (

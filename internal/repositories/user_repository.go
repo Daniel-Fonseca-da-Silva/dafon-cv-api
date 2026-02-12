@@ -16,7 +16,10 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	GetAll(ctx context.Context) ([]models.User, error)
+	GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.User, bool, error)
+	Count(ctx context.Context) (int64, error)
 	Update(ctx context.Context, user *models.User) error
+	ToggleAdmin(ctx context.Context, id uuid.UUID) (*models.User, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -76,6 +79,47 @@ func (r *userRepository) GetAll(ctx context.Context) ([]models.User, error) {
 	return users, nil
 }
 
+// GetPageAfterID retrieves users using cursor-based pagination.
+// It orders by ID ascending and returns at most limit users.
+// The returned boolean indicates whether there is a next page.
+func (r *userRepository) GetPageAfterID(ctx context.Context, afterID *uuid.UUID, limit int) ([]models.User, bool, error) {
+	var users []models.User
+
+	if limit < 1 {
+		return []models.User{}, false, nil
+	}
+
+	query := r.db.WithContext(ctx).Model(&models.User{})
+	if afterID != nil && *afterID != uuid.Nil {
+		query = query.Where("id > ?", afterID.String())
+	}
+
+	// Fetch one extra record to determine if there is a next page.
+	err := query.Order("id ASC").Limit(limit + 1).Find(&users).Error
+	if err != nil {
+		r.logger.Error("Failed to get users with cursor pagination", zap.Error(err))
+		return nil, false, fmt.Errorf("failed to get users: %w", err)
+	}
+
+	hasNextPage := len(users) > limit
+	if hasNextPage {
+		users = users[:limit]
+	}
+
+	return users, hasNextPage, nil
+}
+
+// Count returns total number of users
+func (r *userRepository) Count(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error
+	if err != nil {
+		r.logger.Error("Failed to count users", zap.Error(err))
+		return 0, fmt.Errorf("failed to count users: %w", err)
+	}
+	return count, nil
+}
+
 // Update updates an existing user in the database
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
@@ -83,6 +127,20 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 	return nil
+}
+
+// ToggleAdmin flips the Admin field for a user and returns the updated user
+func (r *userRepository) ToggleAdmin(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	user, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	user.Admin = !user.Admin
+	if err := r.db.WithContext(ctx).Model(user).Update("admin", user.Admin).Error; err != nil {
+		r.logger.Error("Failed to toggle admin", zap.Error(err), zap.String("user_id", id.String()))
+		return nil, fmt.Errorf("failed to toggle admin: %w", err)
+	}
+	return user, nil
 }
 
 // Delete removes a user from the database

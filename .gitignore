@@ -9,7 +9,10 @@
 
 # Coverage
 *.out
-
+*.md
+*.cursor
+*.prompt
+*.agents
 # Environment variables
 .env*
 help.txt

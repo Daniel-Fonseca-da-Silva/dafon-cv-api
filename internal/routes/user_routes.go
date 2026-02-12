@@ -4,7 +4,6 @@ import (
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/cache"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/handlers"
-	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/middleware"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/redis"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/repositories"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/usecases"
@@ -14,25 +13,27 @@ import (
 )
 
 // SetupUserRoutes configures user-related routes
-func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
+func SetupUserRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc) {
 	// Initialize cache service
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 
 	// Initialize user dependencies
 	userRepo := repositories.NewUserRepository(db, logger)
 	configurationRepo := repositories.NewConfigurationRepository(db, logger)
-	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, cacheService, logger)
-	userHandler := handlers.NewUserHandler(userUseCase)
+	subscriptionRepo := repositories.NewSubscriptionRepository(db, logger)
+	userUseCase := usecases.NewUserUseCase(userRepo, configurationRepo, subscriptionRepo, cacheService, logger)
+	userHandler := handlers.NewUserHandler(userUseCase, logger)
+
+	// Public user routes (no authentication)
+	publicUsers := router.Group("/api/v1/user")
+	publicUsers.POST("", userHandler.CreateUser)
 
 	// Protected user routes (require authentication)
-	protectedUsers := router.Group("/api/v1/user")
-	protectedUsers.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-
+	protectedUsers := router.Group("/api/v1/user", authMiddleware)
 	{
-		protectedUsers.POST("", userHandler.CreateUser)
-		protectedUsers.GET("/all", userHandler.GetAllUsers)   // Get all users
-		protectedUsers.GET("/:id", userHandler.GetUserByID)   // Get user by ID
-		protectedUsers.PATCH("/:id", userHandler.UpdateUser)  // Update user
-		protectedUsers.DELETE("/:id", userHandler.DeleteUser) // Delete user
+		protectedUsers.GET("/all", userHandler.GetAllUsers)
+		protectedUsers.GET("/:id", userHandler.GetUserByID)
+		protectedUsers.PATCH("/:id", userHandler.UpdateUser)
+		protectedUsers.DELETE("/:id", userHandler.DeleteUser)
 	}
 }

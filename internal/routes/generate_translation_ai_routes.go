@@ -12,20 +12,23 @@ import (
 )
 
 // SetupGenerateTranslationAIRoutes configures AI filtering-related routes
-func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config) {
-	generateTranslationAIUseCase, err := usecases.NewGenerateTranslationAIUseCase()
+func SetupGenerateTranslationAIRoutes(router *gin.Engine, logger *zap.Logger, cfg *config.Config, authMiddleware gin.HandlerFunc, subscriptionUseCase usecases.SubscriptionUseCase) {
+	generateTranslationAIUseCase, err := usecases.NewGenerateTranslationAIUseCase(cfg.OpenAI.APIKey)
 	if err != nil {
 		logger.Error("Failed to create Generate Translation AI usecase", zap.Error(err))
 		return
 	}
 
-	generateTranslationAIHandler := handlers.NewGenerateTranslationAIHandler(generateTranslationAIUseCase)
+	generateTranslationAIHandler := handlers.NewGenerateTranslationAIHandler(generateTranslationAIUseCase, logger)
 	// Criar rate limiter mais estrito para AI routes
 	aiRateLimiter := ratelimit.NewAIRateLimiter(redis.GetClient(), logger)
 
-	generateTranslations := router.Group("/api/v1/generate-translation-ai")
-	generateTranslations.Use(middleware.StaticTokenMiddleware(cfg.App.StaticToken))
-	generateTranslations.Use(ratelimit.RateLimiterMiddleware(aiRateLimiter))
+	generateTranslations := router.Group(
+		"/api/v1/generate-translation-ai",
+		authMiddleware,
+		middleware.RequireSubscriptionPlan(subscriptionUseCase, redis.GetClient(), config.DefaultAIQuotaByPlan()),
+		ratelimit.RateLimiterMiddleware(aiRateLimiter),
+	)
 	{
 		generateTranslations.POST("", generateTranslationAIHandler.FilterContent)
 	}

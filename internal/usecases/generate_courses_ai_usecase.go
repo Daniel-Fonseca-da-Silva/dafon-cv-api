@@ -3,11 +3,12 @@ package usecases
 import (
 	"context"
 	"fmt"
-	"os"
 
+	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/config"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/dto"
 	"github.com/Daniel-Fonseca-da-Silva/dafon-cv-api/internal/errors"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // GenerateCoursesAIUseCase defines the interface for AI filtering operations
@@ -21,13 +22,12 @@ type generateCoursesAIUseCase struct {
 }
 
 // NewGenerateCoursesAIUseCase creates a new instance of GenerateCoursesAIUseCase
-func NewGenerateCoursesAIUseCase() (GenerateCoursesAIUseCase, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+func NewGenerateCoursesAIUseCase(apiKey string) (GenerateCoursesAIUseCase, error) {
 	if apiKey == "" {
 		return nil, errors.NewAppError("OPENAI_API_KEY environment variable is required")
 	}
 
-	client := openai.NewClient()
+	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	return &generateCoursesAIUseCase{
 		openaiClient: &client,
@@ -75,8 +75,9 @@ ADDITIONAL INSTRUCTIONS:
 - If the input is unclear or insufficient, ask briefly for more detail IN THE SAME LANGUAGE AS THE INPUT (e.g., "Can you specify the course or field of study better?").`),
 			openai.UserMessage(fmt.Sprintf("Generate a professional list of courses or certifications based on this content:\n\n%s", req.Content)),
 		},
-		MaxTokens:   openai.Int(1000),
-		Temperature: openai.Float(0.7),
+		MaxTokens:   openai.Int(int64(config.ParseIntEnv("OPENAI_MAX_TOKENS", 1000))),
+		Temperature: openai.Float(config.ParseFloatEnv("OPENAI_TEMPERATURE", 0.7)),
+		TopP:        openai.Float(config.ParseFloatEnv("OPENAI_TOP_P", 1.0)),
 	}
 
 	// Call OpenAI API

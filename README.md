@@ -53,6 +53,7 @@ curl http://localhost:8080/health
 - ✅ **User & Configuration Management** - Comprehensive user profiles and settings
 - ✅ **Email Integration** - Resend-powered email functionality
 - ✅ **Robust Data Validation** - Advanced validation for emails, phones, and data integrity
+- ✅ **Stripe Subscription System** - Four-tier plan system (Free, Simple, Medium, Ultra) with monthly billing
 - ✅ **Rate Limiting System** - Redis-based rate limiting with configurable limits
 - ✅ **Advanced Caching System** - Redis-based caching with intelligent TTL and invalidation
 - ✅ **Clean Architecture** - SOLID principles with clear separation of concerns
@@ -80,7 +81,7 @@ The project follows **Clean Architecture** principles with clear separation of c
 │   │   ├── email_handler.go
 │   │   ├── generate_*_ai_handler.go  # 7 AI generation handlers
 │   │   └── user_handler.go
-│   ├── middleware/             # Middlewares (Static Token Auth, CORS)
+│   ├── middleware/             # Middlewares (Static Token Auth, Subscription, CORS)
 │   ├── models/                 # Domain entities (GORM models)
 │   ├── ratelimit/             # Rate limiting system (Redis-based)
 │   ├── redis/                 # Redis connection and configuration
@@ -155,14 +156,38 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  A[Request: POST /ai/generate-intro] --> B[Rate Limiting Check]
-  B -->|Allowed| C[Validate payload]
-  B -->|Rate Limited| D[429 Too Many Requests]
-  C --> E[Build prompt]
-  E --> F[OpenAI Completion]
-  F -->|Success| G[Sanitize and shape response]
-  F -->|Error| H[Return error with context]
-  G --> I[200 OK: filtered content]
+  A[Request: POST /ai/generate-intro] --> B[Subscription Plan Check]
+  B -->|Plan OK| C[Rate Limiting Check]
+  B -->|Limit Exceeded| Z[402 Payment Required]
+  C -->|Allowed| D[Validate payload]
+  C -->|Rate Limited| E[429 Too Many Requests]
+  D --> F[Build prompt]
+  F --> G[OpenAI Completion]
+  G -->|Success| H[Sanitize and shape response]
+  G -->|Error| I[Return error with context]
+  H --> J[200 OK: filtered content]
+```
+
+### Subscription Checkout - Flow
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant API as dafon-cv-api
+  participant DB as MySQL
+  participant S as Stripe
+
+  C->>API: POST /subscriptions/checkout
+  API->>DB: Get or create subscription record
+  API->>S: Create Stripe Customer
+  API->>S: Create Checkout Session
+  S-->>API: Session URL
+  API-->>C: 200 OK + Checkout URL
+  C->>S: Complete payment
+  S->>API: Webhook: checkout.session.completed
+  API->>DB: Update subscription status
+  S->>API: Webhook: invoice.paid
+  API->>DB: Activate subscription
 ```
 
 ### Rate Limiting - Flow
@@ -233,6 +258,7 @@ erDiagram
   USERS ||--o{ SESSIONS : has
   USERS ||--o{ CURRICULUMS : owns
   USERS ||--|| CONFIGURATIONS : has
+  USERS ||--o| SUBSCRIPTIONS : has
   CURRICULUMS ||--o{ WORKS : includes
   CURRICULUMS ||--o{ EDUCATIONS : includes
 
@@ -240,6 +266,23 @@ erDiagram
     uuid id PK
     string name
     string email
+    datetime created_at
+    datetime updated_at
+  }
+
+  SUBSCRIPTIONS {
+    uuid id PK
+    uuid user_id FK
+    string plan
+    string status
+    string stripe_customer_id
+    string stripe_subscription_id
+    datetime current_period_end
+    bool cancel_at_period_end
+    datetime canceled_at
+    datetime trial_ends_at
+    datetime access_revoked_at
+    string access_revoke_reason
     datetime created_at
     datetime updated_at
   }
@@ -305,7 +348,17 @@ erDiagram
 
 ## 📚 API Documentation
 
-All endpoints require static token authentication via the `Authorization: Bearer <STATIC_TOKEN>` header.
+### Authentication
+
+This API supports **two** authentication mechanisms:
+
+- **Session Token (Magic Link)**: used for **user-scoped endpoints**. Send `Authorization: Bearer <SESSION_TOKEN>`.
+  - The session token is validated against the `sessions` table (`token`, `is_active=true`, `expires_at > now`).
+  - When valid, the middleware sets the authenticated user id in request context under key `user_id`.
+- **Static API Key (`BACKEND_APIKEY`)**: used for **operational endpoints** like sending emails and the back office.
+  - Send `Authorization: Bearer <STATIC_TOKEN>`.
+
+> **Admin routes:** still require `X-User-ID` and admin privileges (back office).
 
 ### Performance Features
 
@@ -395,6 +448,77 @@ POST /api/v1/generate-analyze-ai      # Analyze and filter content
 POST /api/v1/generate-translation-ai # Translate content
 ```
 
+### Subscription Management
+
+```http
+GET  /api/v1/subscriptions/me         # Get current user subscription status
+POST /api/v1/subscriptions/checkout   # Create a Stripe checkout session
+POST /api/v1/subscriptions/cancel     # Cancel an active subscription
+POST /api/v1/subscriptions/webhook    # Stripe webhook (no auth required)
+```
+
+> **Note:** All subscription endpoints except the webhook require the `Authorization: Bearer <SESSION_TOKEN>` header.
+
+#### Subscription Plans
+
+| Plan     | Monthly AI Requests | Price ID Env Var              |
+|----------|--------------------:|-------------------------------|
+| **Free** | 3                   | _(no Stripe price, default)_  |
+| **Simple** | 30                | `STRIPE_PRICE_ID_SIMPLE`      |
+| **Medium** | 100               | `STRIPE_PRICE_ID_MEDIUM`      |
+| **Ultra**  | Unlimited         | `STRIPE_PRICE_ID_ULTRA`       |
+
+#### Free Plan (No Credit Card)
+
+Every user starts with a **Free** subscription automatically on registration. No credit card and no Stripe customer/subscription is required to use the Free plan.
+
+**How it works (step-by-step):**
+
+1. **Register user**: `POST /api/v1/user`
+2. The API creates:
+   - a row in `users`
+   - a default row in `configurations`
+   - a row in `subscriptions` with:
+     - `plan = 'free'`
+     - `status = 'active'`
+     - Stripe fields empty (`stripe_customer_id`, `stripe_subscription_id`)
+3. When the user calls any AI endpoint, the subscription middleware enforces the monthly quota:
+   - Free plan: **3** AI requests/month
+   - If exceeded: **402 Payment Required** (`{"error":"plan limit exceeded"}`)
+
+**Backfill existing users (SQL):**
+
+If you already have users created before this feature, run the following SQL once:
+
+```sql
+INSERT INTO subscriptions (
+  id, created_at, updated_at, deleted_at,
+  user_id, plan, status,
+  stripe_customer_id, stripe_subscription_id,
+  current_period_end, cancel_at_period_end, canceled_at,
+  trial_ends_at, access_revoked_at, access_revoke_reason
+)
+SELECT
+  UUID(), NOW(), NOW(), NULL,
+  u.id, 'free', 'active',
+  NULL, NULL,
+  NULL, 0, NULL,
+  NULL, NULL, NULL
+FROM users u
+LEFT JOIN subscriptions s ON s.user_id = u.id
+WHERE s.user_id IS NULL;
+```
+
+#### Stripe Webhook Events Handled
+
+| Event                            | Action                                     |
+|----------------------------------|--------------------------------------------|
+| `checkout.session.completed`     | Provision subscription after checkout       |
+| `invoice.paid`                   | Activate/renew subscription                 |
+| `invoice.payment_failed`         | Mark subscription as past due               |
+| `customer.subscription.deleted`  | Cancel subscription                         |
+| `charge.refunded`                | Revoke access due to refund                 |
+
 ### Configuration Management
 
 ```http
@@ -409,7 +533,7 @@ DELETE /api/v1/configuration/:user_id     # Delete configuration
 POST /api/v1/send-email              # Send email via Resend
 ```
 
-> **Authentication:** All endpoints require the `Authorization: Bearer <STATIC_TOKEN>` header.
+> **Authentication:** `POST /api/v1/send-email` uses `Authorization: Bearer <STATIC_TOKEN>` to prevent abuse. User-scoped endpoints use `Authorization: Bearer <SESSION_TOKEN>`.
 
 ---
 
@@ -442,8 +566,12 @@ MYSQL_USER=your_mysql_user
 MYSQL_PASSWORD=your_mysql_password
 
 # Redis Configuration (Cache + Rate Limiting)
+# Option 1: Use REDIS_PUBLIC_URL (recommended for cloud providers like Railway)
+REDIS_PUBLIC_URL=redis://default:password@host:port
+# Option 2: Use individual variables (fallback)
 REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_PORT=
+REDIS_USERNAME=
 REDIS_PASSWORD=
 REDIS_DB=0
 
@@ -456,6 +584,13 @@ AI_RATE_WINDOW_MINUTES=
 # Application Configuration
 BACKEND_APIKEY=your_static_token_here
 APP_URL=http://localhost:3000
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_SIMPLE=price_...
+STRIPE_PRICE_ID_MEDIUM=price_...
+STRIPE_PRICE_ID_ULTRA=price_...
 ```
 
 ### Optional Environment Variables
@@ -632,8 +767,10 @@ docker compose logs -f redis
 | **429 Too Many Requests** | Rate limit exceeded | Check rate limiting configuration |
 | **OpenAI Errors** | AI generation fails | Check `OPENAI_API_KEY` and quota |
 | **Database Connection** | Connection refused | Verify `DB_HOST`, `DB_PORT`, credentials |
-| **Redis Connection** | Redis connection failed | Verify `REDIS_HOST`, `REDIS_PORT` |
+| **Redis Connection** | Redis connection failed | Verify `REDIS_PUBLIC_URL` or `REDIS_HOST`, `REDIS_PORT` |
 | **Cache Issues** | Slow responses, stale data | Check Redis connection, clear cache if needed |
+| **402 Payment Required** | Plan limit exceeded | Upgrade subscription plan or wait for monthly reset |
+| **Stripe Webhook Errors** | Subscription not updating | Check `STRIPE_WEBHOOK_SECRET` and webhook URL |
 | **Email Service** | Email sending fails | Check `RESEND_API_KEY` and `MAIL_FROM` |
 
 ### Debug Commands
@@ -726,8 +863,12 @@ The application implements a comprehensive Redis-based caching system to optimiz
 #### **Redis Configuration**
 ```bash
 # Redis connection settings
+# Option 1: Use REDIS_PUBLIC_URL (recommended for cloud providers like Railway)
+REDIS_PUBLIC_URL=redis://default:password@host:port
+# Option 2: Use individual variables (fallback)
 REDIS_HOST=
 REDIS_PORT=
+REDIS_USERNAME=
 REDIS_PASSWORD=
 REDIS_DB=
 ```
