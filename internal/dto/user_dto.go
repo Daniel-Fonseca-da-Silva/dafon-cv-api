@@ -8,7 +8,7 @@ import (
 
 // RegisterRequest represents the request structure for user registration
 type RegisterRequest struct {
-	Name     string  `json:"name" binding:"required,min=15,max=100"`
+	Name     string  `json:"name" binding:"required,min=10,max=100"`
 	Email    string  `json:"email" binding:"required,email"`
 	ImageURL *string `json:"image_url" binding:"omitempty,url"`
 }
