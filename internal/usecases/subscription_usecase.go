@@ -26,7 +26,6 @@ type SubscriptionUseCase interface {
 	GetEntitlement(ctx context.Context, userID uuid.UUID) (models.SubscriptionPlan, error)
 	CreateCheckoutSession(ctx context.Context, userID uuid.UUID, req *dto.CreateCheckoutSessionRequest) (*dto.CreateCheckoutSessionResponse, error)
 	CreatePortalSession(ctx context.Context, userID uuid.UUID, req *dto.CreatePortalSessionRequest) (*dto.CreatePortalSessionResponse, error)
-	CancelMySubscription(ctx context.Context, userID uuid.UUID, atPeriodEnd bool) error
 	HandleStripeWebhook(ctx context.Context, payload []byte, signature string) error
 }
 
@@ -239,53 +238,6 @@ func (uc *subscriptionUseCase) CreatePortalSession(ctx context.Context, userID u
 	}
 
 	return &dto.CreatePortalSessionResponse{PortalURL: s.URL}, nil
-}
-
-func (uc *subscriptionUseCase) CancelMySubscription(ctx context.Context, userID uuid.UUID, atPeriodEnd bool) error {
-	if uc.stripeCfg.SecretKey == "" {
-		return errors.New("stripe secret key not configured")
-	}
-
-	stripe.Key = uc.stripeCfg.SecretKey
-
-	subscription, err := uc.subscriptionRepo.GetByUserID(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if subscription == nil || subscription.StripeSubscriptionID == "" {
-		return errors.New("no active Stripe subscription found for user")
-	}
-
-	if atPeriodEnd {
-		_, err := stripesub.Update(subscription.StripeSubscriptionID, &stripe.SubscriptionParams{
-			CancelAtPeriodEnd: stripe.Bool(true),
-		})
-		if err != nil {
-			return fmt.Errorf("set cancel_at_period_end: %w", err)
-		}
-		subscription.CancelAtPeriodEnd = true
-		if err := uc.subscriptionRepo.Save(ctx, subscription); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	_, err = stripesub.Cancel(subscription.StripeSubscriptionID, nil)
-	if err != nil {
-		return fmt.Errorf("cancel subscription: %w", err)
-	}
-
-	now := uc.now()
-	subscription.Status = models.SubscriptionStatusCanceled
-	subscription.Plan = models.SubscriptionPlanFree
-	subscription.CanceledAt = &now
-	subscription.CancelAtPeriodEnd = false
-	subscription.CurrentPeriodEnd = nil
-	if err := uc.subscriptionRepo.Save(ctx, subscription); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (uc *subscriptionUseCase) HandleStripeWebhook(ctx context.Context, payload []byte, signature string) error {

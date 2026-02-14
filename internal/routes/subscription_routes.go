@@ -24,6 +24,5 @@ func SetupSubscriptionRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger
 		protected.GET("/me", subscriptionHandler.GetMySubscription)
 		protected.POST("/checkout", subscriptionHandler.CreateCheckoutSession)
 		protected.POST("/portal", subscriptionHandler.CreatePortalSession)
-		protected.POST("/cancel", subscriptionHandler.CancelMySubscription)
 	}
 }

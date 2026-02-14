@@ -81,26 +81,6 @@ func (h *SubscriptionHandler) CreatePortalSession(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (h *SubscriptionHandler) CancelMySubscription(c *gin.Context) {
-	userID, ok := h.getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	var req dto.CancelSubscriptionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		transporthttp.HandleValidationError(c, err)
-		return
-	}
-
-	if err := h.subscriptionUseCase.CancelMySubscription(c.Request.Context(), userID, req.AtPeriodEnd); err != nil {
-		transporthttp.HandleValidationError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Subscription cancellation requested"})
-}
-
 func (h *SubscriptionHandler) StripeWebhook(c *gin.Context) {
 	signature := c.GetHeader("Stripe-Signature")
 	if signature == "" {
