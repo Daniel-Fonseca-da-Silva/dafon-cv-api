@@ -50,7 +50,9 @@ curl http://localhost:8080/health
 - ✅ **Complete CV Management** - Full CRUD operations for curriculums, works, and education with pagination
 - ✅ **Text Format Export** - Generate curriculum body in plain text format for easy sharing
 - ✅ **AI-Powered Content Generation** - 7 specialized AI endpoints for professional content
-- ✅ **User & Configuration Management** - Comprehensive user profiles and settings
+- ✅ **User & Configuration Management** - Comprehensive user profiles and settings (including `admin` role)
+- ✅ **Admin (Back Office) API** - Dashboard, users list/stats/detail/toggle-admin, curriculums list/stats (protected by static token + session + admin role)
+- ✅ **Curriculum Creation Stats** - Per-user total creation count (`curriculum_creation_stats` table) for analytics
 - ✅ **Email Integration** - Resend-powered email functionality
 - ✅ **Robust Data Validation** - Advanced validation for emails, phones, and data integrity
 - ✅ **Stripe Subscription System** - Four-tier plan system (Free, Simple, Medium, Ultra) with monthly billing
@@ -76,24 +78,29 @@ The project follows **Clean Architecture** principles with clear separation of c
 │   ├── dto/                    # Data Transfer Objects (request/response)
 │   ├── errors/                 # Custom error types and wrappers
 │   ├── handlers/               # Presentation layer (HTTP handlers)
+│   │   ├── admin_handler.go
 │   │   ├── configuration_handler.go
 │   │   ├── curriculum_handler.go
 │   │   ├── email_handler.go
 │   │   ├── generate_*_ai_handler.go  # 7 AI generation handlers
+│   │   ├── subscription_handler.go
 │   │   └── user_handler.go
-│   ├── middleware/             # Middlewares (Static Token Auth, Subscription, CORS)
-│   ├── models/                 # Domain entities (GORM models)
-│   ├── ratelimit/             # Rate limiting system (Redis-based)
-│   ├── redis/                 # Redis connection and configuration
-│   ├── repositories/           # Data access layer (interfaces + implementations)
+│   ├── middleware/             # Static Token, X-Static-Token (admin), Session, Admin, Subscription
+│   ├── models/                 # Domain entities (GORM models, incl. curriculum_creation_stats)
+│   ├── ratelimit/              # Rate limiting system (Redis-based)
+│   ├── redis/                  # Redis connection and configuration
+│   ├── repositories/           # Data access layer (incl. curriculum_creation_stats_repository)
 │   ├── routes/                 # Route definitions and setup
+│   │   ├── admin_routes.go
 │   │   ├── configuration_routes.go
 │   │   ├── curriculum_routes.go
 │   │   ├── email_routes.go
-│   │   ├── generate_*_ai_routes.go  # 7 AI generation routes
+│   │   ├── generate_*_ai_routes.go
+│   │   ├── subscription_routes.go
 │   │   └── user_routes.go
-│   ├── usecases/               # Business logic layer with caching
-│   ├── validation/              # Custom validation rules
+│   ├── transport/http/         # HTTP helpers (validation, error responses)
+│   ├── usecases/               # Business logic layer (incl. admin_usecase)
+│   ├── validation/             # Custom validation rules
 │   └── validators/             # Validation utilities
 ```
 
@@ -261,11 +268,13 @@ erDiagram
   USERS ||--o| SUBSCRIPTIONS : has
   CURRICULUMS ||--o{ WORKS : includes
   CURRICULUMS ||--o{ EDUCATIONS : includes
+  USERS ||--o| CURRICULUM_CREATION_STATS : has
 
   USERS {
     uuid id PK
     string name
     string email
+    bool admin
     datetime created_at
     datetime updated_at
   }
@@ -342,6 +351,14 @@ erDiagram
     datetime created_at
     datetime updated_at
   }
+
+  CURRICULUM_CREATION_STATS {
+    uuid id PK
+    uuid user_id FK "unique"
+    int64 total_creations
+    datetime created_at
+    datetime updated_at
+  }
 ```
 
 ---
@@ -353,12 +370,11 @@ erDiagram
 This API supports **two** authentication mechanisms:
 
 - **Session Token (Magic Link)**: used for **user-scoped endpoints**. Send `Authorization: Bearer <SESSION_TOKEN>`.
-  - The session token is validated against the `sessions` table (`token`, `is_active=true`, `expires_at > now`).
+  - The session token is validated against the `sessions` table (valid token, not expired).
   - When valid, the middleware sets the authenticated user id in request context under key `user_id`.
-- **Static API Key (`BACKEND_APIKEY`)**: used for **operational endpoints** like sending emails and the back office.
-  - Send `Authorization: Bearer <STATIC_TOKEN>`.
+- **Static API Key (`BACKEND_APIKEY`)**: used for **operational endpoints** such as `POST /api/v1/send-email`. Send `Authorization: Bearer <STATIC_TOKEN>`.
 
-> **Admin routes:** still require `X-User-ID` and admin privileges (back office).
+**Admin routes** (`/api/v1/admin/*`): require **both** `X-Static-Token` (same value as `BACKEND_APIKEY`) and `Authorization: Bearer <SESSION_TOKEN>`. The user must have `admin = true` in the `users` table (enforced by `AdminMiddleware`).
 
 ### Performance Features
 
@@ -368,10 +384,11 @@ This API supports **two** authentication mechanisms:
 - **🔄 Fallback Strategy** - Graceful degradation when cache is unavailable
 - **📄 Pagination Support** - Built-in pagination for list endpoints with sorting
 
-### Health Check
+### Health Check and Documentation
 
 ```http
 GET /health                  # Application health status
+GET /swagger/*any            # Swagger UI (generated with swag init -g cmd/api/main.go)
 ```
 
 ### User Management
@@ -386,12 +403,16 @@ DELETE /api/v1/user/:id                # Delete user
 
 ### Curriculum Management
 
+All curriculum routes require `Authorization: Bearer <SESSION_TOKEN>`.
+
 ```http
-POST   /api/v1/curriculums                           # Create curriculum
+POST   /api/v1/curriculums                             # Create curriculum
 GET    /api/v1/curriculums/get-all-by-user/:user_id   # Get all curriculums by user (paginated)
-GET    /api/v1/curriculums/:curriculum_id            # Get curriculum by ID
-GET    /api/v1/curriculums/get-body/:curriculum_id   # Get curriculum body (text format)
-DELETE /api/v1/curriculums/:curriculum_id            # Delete curriculum
+GET    /api/v1/curriculums/count-by-user/:user_id     # Total curriculum count for user
+GET    /api/v1/curriculums/creation-count-by-user/:user_id  # Creation stats (curriculum_creation_stats)
+GET    /api/v1/curriculums/:curriculum_id              # Get curriculum by ID
+GET    /api/v1/curriculums/get-body/:curriculum_id    # Get curriculum body (text format)
+DELETE /api/v1/curriculums/:curriculum_id             # Delete curriculum
 ```
 
 **Pagination Parameters for GET all curriculums:**
@@ -438,14 +459,16 @@ GET /api/v1/curriculums/get-all-by-user/123e4567-e89b-12d3-a456-426614174000?pag
 
 ### AI Content Generation
 
+All AI routes require `Authorization: Bearer <SESSION_TOKEN>` and are subject to subscription quotas and AI rate limiting.
+
 ```http
-POST /api/v1/generate-intro-ai        # Generate professional introduction
-POST /api/v1/generate-courses-ai       # Generate course recommendations
-POST /api/v1/generate-academic-ai     # Generate academic content
-POST /api/v1/generate-task-ai         # Generate task descriptions
-POST /api/v1/generate-skill-ai        # Generate skill recommendations
-POST /api/v1/generate-analyze-ai      # Analyze and filter content
-POST /api/v1/generate-translation-ai # Translate content
+POST /api/v1/generate-intro-ai           # Generate professional introduction
+POST /api/v1/generate-courses-ai         # Generate course recommendations
+POST /api/v1/generate-academic-ai        # Generate academic content
+POST /api/v1/generate-task-ai            # Generate task descriptions
+POST /api/v1/generate-skill-ai           # Generate skill recommendations
+POST /api/v1/generate-analyze-ai/:id     # Analyze and filter content (curriculum ID in path)
+POST /api/v1/generate-translation-ai    # Translate content
 ```
 
 ### Subscription Management
@@ -453,11 +476,11 @@ POST /api/v1/generate-translation-ai # Translate content
 ```http
 GET  /api/v1/subscriptions/me         # Get current user subscription status
 POST /api/v1/subscriptions/checkout   # Create a Stripe checkout session
-POST /api/v1/subscriptions/cancel     # Cancel an active subscription
+POST /api/v1/subscriptions/portal     # Create Stripe Customer Portal session (manage/cancel subscription)
 POST /api/v1/subscriptions/webhook    # Stripe webhook (no auth required)
 ```
 
-> **Note:** All subscription endpoints except the webhook require the `Authorization: Bearer <SESSION_TOKEN>` header.
+> **Note:** All subscription endpoints except the webhook require the `Authorization: Bearer <SESSION_TOKEN>` header. Cancellation is done via the Stripe Customer Portal (`POST /subscriptions/portal`) or via webhook when the subscription is deleted in Stripe.
 
 #### Subscription Plans
 
@@ -534,6 +557,25 @@ POST /api/v1/send-email              # Send email via Resend
 ```
 
 > **Authentication:** `POST /api/v1/send-email` uses `Authorization: Bearer <STATIC_TOKEN>` to prevent abuse. User-scoped endpoints use `Authorization: Bearer <SESSION_TOKEN>`.
+
+### Admin API (Back Office)
+
+Admin routes are protected by **three** checks: `X-Static-Token` header (same value as `BACKEND_APIKEY`), `Authorization: Bearer <SESSION_TOKEN>` (valid session), and the user must have `admin = true` in the database.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/admin/dashboard` | Dashboard summary (users count, curriculums count) |
+| GET | `/api/v1/admin/users/stats` | Users statistics |
+| GET | `/api/v1/admin/users` | Paginated users list |
+| GET | `/api/v1/admin/users/:id/detail` | User detail |
+| PATCH | `/api/v1/admin/users/:id/toggle-admin` | Toggle user admin role |
+| GET | `/api/v1/admin/curriculums/stats` | Curriculums statistics |
+| GET | `/api/v1/admin/curriculums` | Paginated curriculums list |
+
+**Headers required:**
+
+- `X-Static-Token`: static API token (e.g. from Next.js server using `BACKEND_APIKEY`)
+- `Authorization`: `Bearer <SESSION_TOKEN>` (session from magic link). The backend sets the authenticated user from this session; `X-User-ID` can optionally be sent as a fallback.
 
 ---
 
