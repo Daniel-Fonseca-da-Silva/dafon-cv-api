@@ -53,6 +53,7 @@ func AutoMigrate(log *zap.Logger) error {
 		&models.Configuration{},
 		&models.Session{},
 		&models.Education{},
+		&models.CurriculumCreationStats{},
 	); err != nil {
 		// Restore original logger before returning error
 		DB.Config.Logger = originalLogger
