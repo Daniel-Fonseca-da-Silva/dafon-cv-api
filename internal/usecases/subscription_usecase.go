@@ -142,8 +142,8 @@ func (uc *subscriptionUseCase) CreateCheckoutSession(ctx context.Context, userID
 	}
 
 	stripeCustomerID := ""
-	if subscription != nil && subscription.StripeCustomerID != "" {
-		stripeCustomerID = subscription.StripeCustomerID
+	if subscription != nil && subscription.StripeCustomerID != nil && *subscription.StripeCustomerID != "" {
+		stripeCustomerID = *subscription.StripeCustomerID
 	} else {
 		params := &stripe.CustomerParams{
 			Email: stripe.String(user.Email),
@@ -163,7 +163,7 @@ func (uc *subscriptionUseCase) CreateCheckoutSession(ctx context.Context, userID
 			UserID:           userID,
 			Plan:             plan,
 			Status:           models.SubscriptionStatusIncomplete,
-			StripeCustomerID: stripeCustomerID,
+			StripeCustomerID: &stripeCustomerID,
 		}
 		if err := uc.subscriptionRepo.Create(ctx, subscription); err != nil {
 			return nil, err
@@ -171,7 +171,7 @@ func (uc *subscriptionUseCase) CreateCheckoutSession(ctx context.Context, userID
 	} else {
 		subscription.Plan = plan
 		subscription.Status = models.SubscriptionStatusIncomplete
-		subscription.StripeCustomerID = stripeCustomerID
+		subscription.StripeCustomerID = &stripeCustomerID
 		if err := uc.subscriptionRepo.Save(ctx, subscription); err != nil {
 			return nil, err
 		}
@@ -217,14 +217,14 @@ func (uc *subscriptionUseCase) CreatePortalSession(ctx context.Context, userID u
 	if err != nil {
 		return nil, err
 	}
-	if subscription == nil || subscription.StripeCustomerID == "" {
+	if subscription == nil || subscription.StripeCustomerID == nil || *subscription.StripeCustomerID == "" {
 		return nil, errors.New("stripe customer not found for user")
 	}
 
 	stripe.Key = uc.stripeCfg.SecretKey
 
 	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(subscription.StripeCustomerID),
+		Customer:  stripe.String(*subscription.StripeCustomerID),
 		ReturnURL: stripe.String(req.ReturnURL),
 	}
 
@@ -317,8 +317,16 @@ func (uc *subscriptionUseCase) handleCheckoutSessionCompleted(ctx context.Contex
 	}
 
 	subscription.Plan = plan
-	subscription.StripeCustomerID = stripeIDFromCustomer(s.Customer)
-	subscription.StripeSubscriptionID = stripeIDFromSubscription(s.Subscription)
+	if cid := stripeIDFromCustomer(s.Customer); cid != "" {
+		subscription.StripeCustomerID = &cid
+	} else {
+		subscription.StripeCustomerID = nil
+	}
+	if sid := stripeIDFromSubscription(s.Subscription); sid != "" {
+		subscription.StripeSubscriptionID = &sid
+	} else {
+		subscription.StripeSubscriptionID = nil
+	}
 	subscription.Status = models.SubscriptionStatusIncomplete
 
 	if uc.logger != nil {
@@ -327,8 +335,8 @@ func (uc *subscriptionUseCase) handleCheckoutSessionCompleted(ctx context.Contex
 			zap.String("event_id", event.ID),
 			zap.String("user_id", userID.String()),
 			zap.String("plan", string(plan)),
-			zap.String("stripe_customer_id", subscription.StripeCustomerID),
-			zap.String("stripe_subscription_id", subscription.StripeSubscriptionID),
+			zap.String("stripe_customer_id", strVal(subscription.StripeCustomerID)),
+			zap.String("stripe_subscription_id", strVal(subscription.StripeSubscriptionID)),
 		)
 	}
 
@@ -371,8 +379,10 @@ func (uc *subscriptionUseCase) handleCustomerSubscriptionUpsert(ctx context.Cont
 		return nil
 	}
 
-	subscription.StripeCustomerID = stripeCustomerID
-	subscription.StripeSubscriptionID = s.ID
+	cid := stripeCustomerID
+	sid := s.ID
+	subscription.StripeCustomerID = &cid
+	subscription.StripeSubscriptionID = &sid
 	subscription.CancelAtPeriodEnd = s.CancelAtPeriodEnd
 
 	if s.CurrentPeriodEnd > 0 {
@@ -523,6 +533,13 @@ func derivePeriodEndFromInvoice(inv *stripe.Invoice) *time.Time {
 	}
 
 	return nil
+}
+
+func strVal(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
 }
 
 func stripeIDFromCustomer(c *stripe.Customer) string {

@@ -47,8 +47,8 @@ type Subscription struct {
 	UserID               uuid.UUID          `json:"user_id" gorm:"type:char(36);not null;uniqueIndex"`
 	Plan                 SubscriptionPlan   `json:"plan" gorm:"size:20;not null;default:'free';index"`
 	Status               SubscriptionStatus `json:"status" gorm:"size:40;not null;default:'trialing';index"`
-	StripeCustomerID     string             `json:"stripe_customer_id" gorm:"size:255;index"`
-	StripeSubscriptionID string             `json:"stripe_subscription_id" gorm:"size:255;uniqueIndex"`
+	StripeCustomerID     *string            `json:"stripe_customer_id" gorm:"size:255;index"`
+	StripeSubscriptionID *string            `json:"stripe_subscription_id" gorm:"size:255;uniqueIndex"`
 
 	CurrentPeriodEnd   *time.Time `json:"current_period_end,omitempty" gorm:"index"`
 	CancelAtPeriodEnd  bool       `json:"cancel_at_period_end" gorm:"not null;default:false"`

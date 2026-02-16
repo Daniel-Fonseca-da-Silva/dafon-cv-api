@@ -33,7 +33,7 @@ type SubscriptionResponse struct {
 	UserID            uuid.UUID  `json:"user_id"`
 	Plan              string     `json:"plan"`
 	Status            string     `json:"status"`
-	StripeCustomerID  string     `json:"stripe_customer_id,omitempty"`
+	StripeCustomerID  *string    `json:"stripe_customer_id,omitempty"`
 	CurrentPeriodEnd  *time.Time `json:"current_period_end,omitempty"`
 	CancelAtPeriodEnd bool       `json:"cancel_at_period_end"`
 	CanceledAt        *time.Time `json:"canceled_at,omitempty"`
