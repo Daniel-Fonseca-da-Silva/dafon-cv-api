@@ -11,8 +11,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// SetupAdminRoutes configures admin (back office) routes. All routes require X-User-ID header and admin user.
-func SetupAdminRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config) {
+// SetupAdminRoutes configures admin (back office) routes.
+// Double protection: X-Static-Token (trusted client) then Authorization Bearer session token; user must be admin.
+func SetupAdminRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *config.Config, sessionRepo repositories.SessionRepository) {
 	userRepo := repositories.NewUserRepository(db, logger)
 	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
 	adminUseCase := usecases.NewAdminUseCase(userRepo, curriculumRepo, logger)
@@ -20,7 +21,8 @@ func SetupAdminRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *
 
 	admin := router.Group(
 		"/api/v1/admin",
-		middleware.StaticTokenMiddleware(cfg.App.StaticToken),
+		middleware.StaticTokenHeaderMiddleware(cfg.App.StaticToken),
+		middleware.SessionMiddleware(sessionRepo),
 		middleware.AdminMiddleware(userRepo),
 	)
 	{

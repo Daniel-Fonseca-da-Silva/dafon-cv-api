@@ -49,6 +49,34 @@ func StaticTokenMiddleware(staticToken string) gin.HandlerFunc {
 	}
 }
 
+// StaticTokenHeaderName is the header used for static token in admin routes (so Authorization can carry session token).
+const StaticTokenHeaderName = "X-Static-Token"
+
+// StaticTokenHeaderMiddleware validates static token from X-Static-Token header.
+// Used for admin routes so that Authorization can carry the session token.
+// Ensures the request comes from a trusted client (e.g. Next.js) that holds the static token.
+func StaticTokenHeaderMiddleware(staticToken string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if staticToken == "" {
+			transporthttp.HandleError(c, http.StatusInternalServerError, "static token not configured")
+			return
+		}
+
+		headerToken := c.GetHeader(StaticTokenHeaderName)
+		if headerToken == "" {
+			transporthttp.HandleError(c, http.StatusUnauthorized, "X-Static-Token header required")
+			return
+		}
+
+		if headerToken != staticToken {
+			transporthttp.HandleError(c, http.StatusUnauthorized, "invalid static token")
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // SessionMiddleware validates a per-user session token (magic link login) and
 // sets the authenticated user id in Gin context under key "user_id".
 func SessionMiddleware(sessionRepo repositories.SessionRepository) gin.HandlerFunc {

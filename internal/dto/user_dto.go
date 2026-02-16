@@ -52,7 +52,7 @@ type UserResponse struct {
 	Age        int       `json:"age,omitempty"`
 	Salary     float64   `json:"salary,omitempty"`
 	Migration  bool      `json:"migration,omitempty"`
-	Admin      bool      `json:"admin,omitempty"`
+	Admin      bool      `json:"admin"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
