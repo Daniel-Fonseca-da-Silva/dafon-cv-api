@@ -41,13 +41,14 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, logger *zap.Logger, cfg *confi
 	// Setup user routes
 	SetupUserRoutes(router, db, logger, cfg, sessionAuthMiddleware)
 
-	// Setup admin (back office) routes
-	SetupAdminRoutes(router, db, logger, cfg)
+	// Setup admin (back office) routes (double protection: static token + session)
+	SetupAdminRoutes(router, db, logger, cfg, sessionRepo)
 
 	// Curriculum use case (shared by curriculum and generate-analyze-ai routes)
 	cacheService := cache.NewCacheService(redis.GetClient(), logger)
 	curriculumRepo := repositories.NewCurriculumRepository(db, logger)
-	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, cacheService, logger)
+	curriculumCreationStatsRepo := repositories.NewCurriculumCreationStatsRepository(db, logger)
+	curriculumUseCase := usecases.NewCurriculumUseCase(curriculumRepo, curriculumCreationStatsRepo, cacheService, logger)
 
 	// Setup curriculum routes
 	SetupCurriculumRoutes(router, db, logger, cfg, sessionAuthMiddleware, curriculumUseCase)

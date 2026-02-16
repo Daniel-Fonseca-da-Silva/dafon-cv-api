@@ -20,20 +20,24 @@ type CurriculumUseCase interface {
 	GetCurriculumByID(ctx context.Context, id uuid.UUID) (*dto.CurriculumResponse, error)
 	GetAllCurriculums(ctx context.Context, userID uuid.UUID, cursor *uuid.UUID, limit int) ([]dto.CurriculumResponse, dto.CursorPagination, error)
 	GetCurriculumBody(ctx context.Context, curriculumID uuid.UUID) (*dto.CurriculumBodyResponse, error)
+	GetCurriculumCountByUserID(ctx context.Context, userID uuid.UUID) (int64, error)
+	GetCreationCountByUserID(ctx context.Context, userID uuid.UUID) (int64, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
 // curriculumUsecase Implementa a interface CurriculumUseCase
 type curriculumUseCase struct {
 	curriculumRepo repositories.CurriculumRepository
+	statsRepo      repositories.CurriculumCreationStatsRepository
 	cacheService   *cache.CacheService
 	logger         *zap.Logger
 }
 
-// NewCurriculumUsecase Cria uma nova instância de CurriculumUsecase
-func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository, cacheService *cache.CacheService, logger *zap.Logger) CurriculumUseCase {
+// NewCurriculumUseCase creates a new instance of CurriculumUseCase.
+func NewCurriculumUseCase(curriculumRepo repositories.CurriculumRepository, statsRepo repositories.CurriculumCreationStatsRepository, cacheService *cache.CacheService, logger *zap.Logger) CurriculumUseCase {
 	return &curriculumUseCase{
 		curriculumRepo: curriculumRepo,
+		statsRepo:      statsRepo,
 		cacheService:   cacheService,
 		logger:         logger,
 	}
@@ -91,6 +95,13 @@ func (cu *curriculumUseCase) CreateCurriculum(ctx context.Context, userID uuid.U
 	// Salvar no banco de dados (GORM irá lidar com a relação de chave estrangeira)
 	if err := cu.curriculumRepo.Create(ctx, curriculum); err != nil {
 		return nil, err
+	}
+
+	if err := cu.statsRepo.IncrementCreationCount(ctx, userID); err != nil {
+		cu.logger.Warn("Failed to increment curriculum creation count; curriculum was created",
+			zap.Error(err),
+			zap.String("user_id", userID.String()),
+		)
 	}
 
 	// Preparar response de works
@@ -307,6 +318,16 @@ func (cu *curriculumUseCase) GetAllCurriculums(ctx context.Context, userID uuid.
 	}
 
 	return curriculumsResponse, pagination, nil
+}
+
+// GetCurriculumCountByUserID returns the number of curriculums for the given user.
+func (cu *curriculumUseCase) GetCurriculumCountByUserID(ctx context.Context, userID uuid.UUID) (int64, error) {
+	return cu.curriculumRepo.CountByUserID(ctx, userID)
+}
+
+// GetCreationCountByUserID returns the total number of successful curriculum creations for the user.
+func (cu *curriculumUseCase) GetCreationCountByUserID(ctx context.Context, userID uuid.UUID) (int64, error) {
+	return cu.statsRepo.GetByUserID(ctx, userID)
 }
 
 // GetCurriculumBody retrieves a curriculum body in text format by curriculum ID

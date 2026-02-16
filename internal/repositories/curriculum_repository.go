@@ -18,6 +18,7 @@ type CurriculumRepository interface {
 	GetPageAfterIDByUserID(ctx context.Context, userID uuid.UUID, afterID *uuid.UUID, limit int) ([]models.Curriculums, bool, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID) (*models.Curriculums, error)
 	Count(ctx context.Context) (int64, error)
+	CountByUserID(ctx context.Context, userID uuid.UUID) (int64, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 }
 
@@ -155,6 +156,20 @@ func (cu *curriculumRepository) Count(ctx context.Context) (int64, error) {
 	if err != nil {
 		cu.logger.Error("Failed to count curriculums", zap.Error(err))
 		return 0, fmt.Errorf("failed to count curriculums: %w", err)
+	}
+	return count, nil
+}
+
+// CountByUserID returns the number of curriculums for the given user.
+func (cu *curriculumRepository) CountByUserID(ctx context.Context, userID uuid.UUID) (int64, error) {
+	var count int64
+	err := cu.db.WithContext(ctx).Model(&models.Curriculums{}).Where("user_id = ?", userID).Count(&count).Error
+	if err != nil {
+		cu.logger.Error("Failed to count curriculums by user ID",
+			zap.Error(err),
+			zap.String("user_id", userID.String()),
+		)
+		return 0, fmt.Errorf("failed to count curriculums by user ID %s: %w", userID.String(), err)
 	}
 	return count, nil
 }
