@@ -184,6 +184,86 @@ func (h *CurriculumHandler) GetAllCurriculums(c *gin.Context) {
 	})
 }
 
+// GetCurriculumCountByUserID godoc
+// @Summary      Get curriculum count by user ID
+// @Description  Returns the number of curriculums for the given user
+// @Tags         curriculum
+// @Accept       json
+// @Produce      json
+// @Param        user_id  path      string  true  "User ID"
+// @Success      200     {object}  object  "Response with count field"
+// @Failure      400     {object}  dto.ErrorResponseValidation  "Invalid user ID format"
+// @Failure      404     {object}  dto.ErrorResponse  "User not found"
+// @Failure      500     {object}  dto.ErrorResponseServer  "Internal server error"
+// @Router       /api/v1/curriculums/count-by-user/{user_id} [get]
+// @Security     BearerAuth
+func (h *CurriculumHandler) GetCurriculumCountByUserID(c *gin.Context) {
+	userIDStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
+		return
+	}
+
+	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			transporthttp.HandleUseCaseError(c, err, "user not found")
+			return
+		}
+		h.abortWithInternalServerError(c, "verify user for curriculum count", err)
+		return
+	}
+
+	count, err := h.curriculumUseCase.GetCurriculumCountByUserID(c.Request.Context(), userID)
+	if err != nil {
+		h.abortWithInternalServerError(c, "get curriculum count by user", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count})
+}
+
+// GetCreationCountByUserID godoc
+// @Summary      Get curriculum creation count by user ID
+// @Description  Returns the total number of successful curriculum creations for the given user
+// @Tags         curriculum
+// @Accept       json
+// @Produce      json
+// @Param        user_id  path      string  true  "User ID"
+// @Success      200      {object}  object  "Response with total_creations field"
+// @Failure      400      {object}  dto.ErrorResponseValidation  "Invalid user ID format"
+// @Failure      404      {object}  dto.ErrorResponse  "User not found"
+// @Failure      500      {object}  dto.ErrorResponseServer  "Internal server error"
+// @Router       /api/v1/curriculums/creation-count-by-user/{user_id} [get]
+// @Security     BearerAuth
+func (h *CurriculumHandler) GetCreationCountByUserID(c *gin.Context) {
+	userIDStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		transporthttp.HandleValidationError(c, errors.New("invalid user ID format"))
+		return
+	}
+
+	_, err = h.userUseCase.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			transporthttp.HandleUseCaseError(c, err, "user not found")
+			return
+		}
+		h.abortWithInternalServerError(c, "verify user for creation count", err)
+		return
+	}
+
+	count, err := h.curriculumUseCase.GetCreationCountByUserID(c.Request.Context(), userID)
+	if err != nil {
+		h.abortWithInternalServerError(c, "get curriculum creation count by user", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"total_creations": count})
+}
+
 // GetCurriculumBody godoc
 // @Summary      Get curriculum body
 // @Description  Returns the curriculum content in text format
